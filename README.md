@@ -1,3 +1,5 @@
+**DO NOT USE IT WITH LIBRE CGMs**
+
 Files for AAPS version 2.8.1.1
 Here, only those files are included that need to be replaced in the original release
 
