@@ -7,6 +7,6 @@ Changes since version 2.7.1
 2. These new variables are maintained by the user in a menu
 3. For the emulator you no longer need to copy logfiles to the working folder. Instead you can just refer
 to them whereever they are stored. This means you may just keep all your logfiles in a single location
-and without having copies sitting around invarious places.
-4. The varaint definition files for the emulator should now be called .vdf instead of .dat
-   Foor downward compatibility the previous naming is still supported but discouraged.
+and without having copies sitting around in various places.
+4. The varaint definition files for the emulator called .dat should now be called .vdf instead.
+   For downward compatibility the previous naming is still supported but discouraged.
