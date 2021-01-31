@@ -1,2 +1,2 @@
 # autoISF
-emulator files, AAPS files  modified, documentain
+emulator files, AAPS files  modified, documentation
