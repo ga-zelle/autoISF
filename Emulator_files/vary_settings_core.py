@@ -470,6 +470,8 @@ def TreatLoop(Curly, log, lcount):
             log_msg('no time stamp found in\n' + str(suggest) )
             return 'STOP' 
         if t_startLabel > stmp :                                    # too early
+            while len(origAI_ratio)>len(loop_mills):
+                origAI_ratio.pop()                                  # erase foot print oo#f loops to be skipped
             SMBreason = {}                                          # clear for first filtered debug list
             SMBreason['script'] = '---------- Script Debug --------------------\n'
             return 'MORE'       
@@ -567,9 +569,9 @@ def TreatLoop(Curly, log, lcount):
         #if profile['new_parameter']['bestParabola']:       dura_p, delta_p, parabs, iMax = getBestParabolaBG(len(bg)-1)
         
         reT = detSMB.determine_basal(glucose_status, currenttemp, iob_data, profile, autosens_data, meal_data, tempBasalFunctionsDummy, True, reservoir, thisTime, Fcasts, Flows, emulAI_ratio)
+        newLoop = False
         if len(origAI_ratio)<len(emulAI_ratio):
             origAI_ratio.append(10.0)                    # not found in original console_error
-        newLoop = False
         reason = echo_rT(reT)                           # overwrite the original reason
         maxBolStr = getReason(reason, 'maxBolus', '. ', 1)
         if len(maxBolStr) > 5 :
@@ -1419,15 +1421,15 @@ def XYplots(loopCount, head1, head2, entries) :
                                 axbg.plot(bfit, tfit, linestyle='dotted', color=fitcolor)   #  best Parabola
                                 axbg.plot([bfit[0],bfit[0]], [tfit[0],tfit[0]], marker='o', color=fitcolor)   #  bulls eye of best forecast
                         
-                if featured('autoISF') :                                                # plot autoISF ratio
-                    #xbg.plot([10,10],[loop_mills[0],loop_mills[-1]],linestyle='dotted',color='black',label='AutoISF(x10) OFF')
-                    axbg.plot(emulAI_ratio,loop_mills,linestyle='none',   marker='o',   color='#606060', label='AutoISF(x10), emulated')
-                    axbg.plot(origAI_ratio,loop_mills,linestyle='solid',  marker='.',   color='#C0C0C0', label='AutoISF(x10), original')
-
                 if featured('as ratio') :                                               # plot autosense ratio
                     axbg.plot([10,10],[loop_mills[0],loop_mills[-1]],linestyle='dotted',color='black',label='Autosense(x10) OFF')
                     axbg.plot(origAs_ratio,loop_mills,linestyle='solid',  marker='.',   color='black',label='Autosense(x10), original')
                     axbg.plot(emulAs_ratio,loop_mills,linestyle='none',   marker='o',   color='black',label='Autosense(x10), emulated')
+
+                if featured('autoISF') :                                                # plot autoISF ratio on top of darker autosense
+                    #xbg.plot([10,10],[loop_mills[0],loop_mills[-1]],linestyle='dotted',color='black',label='AutoISF(x10) OFF')
+                    axbg.plot(emulAI_ratio,loop_mills,linestyle='none',   marker='o',   color='#606060', label='AutoISF(x10), emulated')
+                    axbg.plot(origAI_ratio,loop_mills,linestyle='solid',  marker='.',   color='#C0C0C0', label='AutoISF(x10), original')
 
                 if featured('ISF') :                                                    # plot ISF
                     axbg.plot(emulISF,loop_mills,linestyle='none',   marker='o',    color='#007000',label='ISF, emulated')
