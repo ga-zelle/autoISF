@@ -200,7 +200,7 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
     var bg_ISF = 1 + interpolate(100-bg_off, profile);
     console.error("bg_ISF adaptation is", bg_ISF);
     if (maxISFReduction < bg_ISF) {
-        console.error("bg_ISF reduction", round(bg_ISF,2), "limited by autoisf_max", maxISFReduction);
+        console.error("bg_ISF adaptation", round(bg_ISF,2), "limited by autoisf_max", maxISFReduction);
     }
     if (bg_ISF<1) {
         return Math.min(720, round(profile.sens / bg_ISF, 1));  // observe ISF maximum
@@ -216,12 +216,12 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
     } else if (glucose_status.short_avgdelta<0) {
         //var delta_ISF = 1;
         console.error("delta_ISF adaptation by-passed as no rise or too short lived");
-    } else if (profile.enableppisf_always || profile.postmeal_ISF_duration < (currentTime - meal_data.lastCarbTime) / 1000/3600) {
+    } else if (profile.enableppisf_always || profile.postmeal_ISF_duration >= (currentTime - meal_data.lastCarbTime) / 1000/3600) {
         pp_ISF = 1 + Math.max(0, bg_delta * profile.postmeal_ISF_weight);
         if (pp_ISF != 1) {
             sens_modified = true;
             if (maxISFReduction < pp_ISF) {
-                console.error("pp_ISF reduction", round(pp_ISF,2), "limited by autoisf_max", maxISFReduction);
+                console.error("pp_ISF adaptation", round(pp_ISF,2), "limited by autoisf_max", maxISFReduction);
             } else {
                 console.error("pp_ISF adaptation is", pp_ISF);
             }
@@ -234,8 +234,14 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
              delta_ISF = 0.5 * delta_ISF;
          }
          delta_ISF = 1 + delta_ISF;
-         console.error("delta_ISF adaptation is", delta_ISF);
-         if (delta_ISF != 1) { sens_modified = true };
+         if (delta_ISF != 1) { 
+            sens_modified = true;
+            if (maxISFReduction < delta_ISF) {
+                console.error("delta_ISF adaptation", round(delta_ISF,2), "limited by autoisf_max", maxISFReduction);
+            } else {
+                console.error("delta_ISF adaptation is", delta_ISF);
+            }
+         }
     }
 
     var levelISF = 1
@@ -254,7 +260,7 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
         sens_modified = true;
         console.error("autoISF reports ISF", sens, "did not do it for", dura05,"m; go more aggressive by", round(levelISF,2));
         if (maxISFReduction < levelISF) {
-            console.error("autoISF reduction", round(levelISF,2), "limited by autoisf_max", maxISFReduction);
+            console.error("autoISF adaptation", round(levelISF,2), "limited by autoisf_max", maxISFReduction);
         }
     }
     if ( sens_modified ) {
