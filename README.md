@@ -3,4 +3,4 @@ contains emulator files, AAPS files modified and documentation for the purpose o
 
 **DO NOT USE IT WITH LIBRE CGMs**
 
-The only tested versions are in folders *AAPS_files* and *AAPS_files_incl_varSMB*. The others are still experimental and may result in unexpectred behaviour.
+The only tested versions are in folders *AAPS_files* and *AAPS_files_incl_varSMB*. The others are still experimental and may result in unexpected behaviour.
