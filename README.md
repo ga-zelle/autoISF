@@ -1,5 +1,5 @@
 # autoISF
-The directory +autoISF2.1_dev* contains AAPS files modified and documentation for the purpose of using the prototype autoISF algorithm. It is still a develpment version of extending autoISF for a limited user group.
+The directory *autoISF2.1_dev* contains AAPS files modified and documentation for the purpose of using the prototype autoISF algorithm. It is still a develpment version of extending autoISF for a limited user group.
 
 pp cntans the what-if scripts fr the AAÜS emulatr, specially adapted t be used in cnjunctin with autISF2.1_dev
 
