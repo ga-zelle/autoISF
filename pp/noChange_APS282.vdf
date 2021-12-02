@@ -1,0 +1,33 @@
+new_parameter   maxBolusIOBUsual            False       ### seit 3.Jan.2020
+new_parameter   maxBolusIOBRatio            4           ### schon vor 3.Jan.2020?
+new_parameter   SMBRatio                    0.7         ### seit 3.Jan.2020
+new_parameter   maxBolusTargetRatio         3           ### seit 3.Jan.2020
+new_parameter   maxDeltaRatio               0.3         ### was 0.2; seit ?? ;3.Jan.2020
+new_parameter   insulinCapBelowTarget       True        ### AAPS is fix at False; enable capping below target
+new_parameter   CapFactor                   8           ### previously I used 4; in future 5; meanwhile strenghtened to 8
+new_parameter   thresholdRatio              0.6         ### additional parameter; AAPS is fix at 0.5; I use 0.6 to lift the minimum 
+new_parameter   autoISF_flat                False       ### additional parameter; AAPS is fix at False; enable autoISF_flat
+new_parameter   autoISF_slope               False       ### additional parameter; AAPS is fix at False; enable autoISF_slope
+new_parameter   autoISF_low                 False       ### additional parameter; AAPS is fix at False; enable autoISF_low for lows
+new_parameter   CheckLibreError             False       ### additional parameter; AAPS is fix at True;  suppress that check
+
+new_parameter   LessSMBatModerateBG     True                        ### additional parameter; AAPS is fix at False; reduce SMB if ...
+new_parameter   LessSMBbelow            profile['max_bg'] + 10      ### ... bg below this value
+new_parameter   LessSMBFactor           2.0                         ### ... and multiply percentage reduction by 
+
+temp            maxDeltaBZ              40                                  ### ab wann der Effekt maximal wird
+temp            bg                      glucose_status['glucose']
+temp            relDelta                min(temp['maxDeltaBZ'], temp['bg']-profile['target_bg']) / temp['maxDeltaBZ']
+temp            minSMB                  0.65                                ### untereres Ende, darf leicht unterschritten werden
+temp            maxSMB                  0.95                                ### oberes Ende, darf nicht überschritten werden
+temp            rangeSMB                temp['maxSMB'] - temp['minSMB']
+temp            deltaSMB                min(0.3, max(0, temp['relDelta'] * temp['rangeSMB']))
+profile         smb_delivery_ratio      temp['minSMB'] + temp['deltaSMB']        
+
+profile         use_autoisf             True                        ### my personal settings
+profile         enableautoisf_with_COB  True                        ### my personal settings
+profile         autoisf_max             2.0                         ### my personal settings
+profile         autoisf_hourlychange    1.5                         ### my personal settings
+#rofile         smb_delivery_ratio      0.5                         ### my personal settings
+profile         smb_delivery_ratio_bg_range 40                      ### my personal settings
+profile         smb_max_range_extension 3                           ### my personal settings
