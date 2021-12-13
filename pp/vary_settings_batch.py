@@ -90,6 +90,7 @@ how_to_print = 'print'
 #et_tty(runframe, lfd,  how_to_print)            # export print settings to main routine
 set_tty(0,        0,    how_to_print)            # export print settings to main routine
 
+global echo_msg
 
 # try whether we are on Android:
 test_dir  = '/storage/emulated/0/Android/data/info.nightscout.androidaps/files/'
@@ -183,7 +184,7 @@ if len(inh) > 0:
     ###########################################################################
     btns = ["Next", "Exit", "Test"]
     items = ["bg", "target", "as ratio", "autoISF", "iob", "cob", "range", "bestslope", "ISF", "insReq", "SMB", "basal"]
-    width = [5,     6,          6,        11,        6,      6,      13,      13,        36,      13,      11,     14]
+    width = [5,     6,          6,        11,        6,      6,      13,      13,        43,      13,      11,     14]
     pick  = [0,                                              5,               7,          8,       9,      10]
     while True:
         default_pick = pick
@@ -200,6 +201,19 @@ if len(inh) > 0:
             droid.ttsSpeak(str(cols))                                       # tell the sum
 
     arg2 = 'Android'+''.join(['/'+items[i] for i in selected_items_indexes])# the feature list what to plot
+    varyHome= '/storage/emulated/0/qpython/scripts3/'                           # command used to start this script
+    #varyHome = os.path.dirname(varyHome) + '\\'
+    m  = '='*66+'\nEcho of software versions used\n'+'-'*66
+    m +='\n vary_settings home directory  ' + varyHome
+    #global echo_msg
+    echo_msg = {}
+    echo_version('vary_settings_batch.py')
+    echo_version('vary_settings_core.py')
+    echo_version('determine_basal.py')
+    for ele in echo_msg:
+        m += '\n dated: '+ele + ',   module name: '+echo_msg[ele]
+    m += '\n' + '='*66 + '\n'
+
 
 
     ###########################################################################
@@ -241,7 +255,7 @@ else:                                                                           
     varyHome = os.path.dirname(varyHome) + '\\'
     m  = '='*66+'\nEcho of software versions used\n'+'-'*66
     m +='\n vary_settings home directory  ' + varyHome
-    global echo_msg
+    #global echo_msg
     echo_msg = {}
     echo_version('vary_settings_batch.py')
     echo_version('vary_settings_core.py')

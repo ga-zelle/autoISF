@@ -658,6 +658,7 @@ def TreatLoop(Curly, log, lcount):
         emulSMB.append(round(eval(mySMBstr),1))
         BZ_ISF.append(Fcasts['BZ_ISF'])                 # was set in determine_basal.py
         Delta_ISF.append(Fcasts['Delta_ISF'])           # was set in determine_basal.py
+        acceISF.append(Fcasts['acceISF'])               # was set in determine_basal.py
         emulISF.append(Fcasts['emulISF'])               # was set in determine_basal.py
 
         if reason.find('COB: 0,') == 0: 
@@ -743,7 +744,7 @@ def get_glucose_status(lcount, st) :                    # key = 80
     glucose_status = json.loads(Curly)
     glucose_status['row'] = lcount
     #rint('entered glucose_status for row='+str(lcount)+'  loop_mills='+loop_mills[-1] + '  total count='+str(len(bg))+' with\n '+Curly)
-    print('entered glucose_status for row='+str(lcount)+'  total mills='+str(len(loop_mills))+ '  total BGs='+str(len(bg))+' with\n '+Curly)
+    #print('entered glucose_status for row='+str(lcount)+'  total mills='+str(len(loop_mills))+ '  total BGs='+str(len(bg))+' with\n '+Curly)
     if len(bg)==len(loop_mills) :
         bg.append(glucose_status['glucose'])            # start next iteration
         mills = glucose_status['date']/1000             # time of bg value in seconds; was milliseconds
@@ -761,7 +762,7 @@ def get_glucose_status(lcount, st) :                    # key = 80
     else:
         bg[-1] = (glucose_status['glucose'])            # overwrite as last loop was not finished
         bgTime[-1] = (glucose_status['date']/1000)      # time of bg value in seconds; was minutes
-        print ('\nbg data found in row '+str(lcount)+', total count='+str(len(bg)))
+        #print ('\nbg data found in row '+str(lcount)+', total count='+str(len(bg)))
     pass
 
 def get_iob_data(lcount, st, log) :                     # key = 81
@@ -1492,6 +1493,9 @@ def XYplots(loopCount, head1, head2, entries) :
                             fitcolor = ['#ff00ff',  '#900090']                          # faint violett = magenta, dark violett
                             isBest = ( i==iMax)
                             tx = bgTime[iFrame] +5*60                                   # window end time = +5min from last glucose
+                            #if a2 != 0:
+                            #    tminmax = -a1/(2*a2)+5*60                               # time of min or max +5min
+                            #    tx = max(tx, tminmax)                                   # if min/max is ahead of bgTime
                             while tx >= bgTime[iFrame]-dur*60:
                                 ti = tx - bgTime[iFrame]
                                 bfit.append(a2*pow(ti,2) + a1*ti + a0)
@@ -1758,7 +1762,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
     global  origInsReq, emulInsReq
     global  origSMB, emulSMB, origMaxBolus, emulMaxBolus
     global  origBasal, emulBasal, lastBasal
-    global  profISF, origISF, autoISF, BZ_ISF, Delta_ISF, emulISF, longDelta, avgDelta, longSlope, rateSlope
+    global  profISF, origISF, autoISF, BZ_ISF, Delta_ISF, acceISF, emulISF, longDelta, avgDelta, longSlope, rateSlope
     global  Pred, FlowChart, Fits
     global  filecount
     global  t_startLabel, t_stoppLabel
@@ -1812,6 +1816,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
     autoISF     = []                                # holds the ISF after checking the autosense impact, emulation run
     BZ_ISF      = []                                # holds the ISF after strengthening due to high glucse level
     Delta_ISF   = []                                # holds the ISF after strengthening due to high delta
+    acceISF     = []                                # holds the ISF after strengthening due to high acceleration
     emulISF     = []                                # holds the final ISF after strengthening due to long lasting highs
     
     Pred        = {}                                # holds all loop predictions
@@ -1936,7 +1941,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                                 this_List+= f'{round(thisDelta["parabola_fit_next_delta"],2):>8}'
                     r_list += this_List
                 if featured('ISF'):
-                    r_list += f'{round(origISF[iFrame],1):>6}{round(profISF[iFrame],1):>6}{round(autoISF[iFrame],1):>6}{round(BZ_ISF[iFrame],1):>6}{round(Delta_ISF[iFrame],1):>6}{round(emulISF[iFrame],1):>6}'
+                    r_list += f' {round(origISF[iFrame],1):>6}{round(profISF[iFrame],1):>6}{round(autoISF[iFrame],1):>6}{round(BZ_ISF[iFrame],1):>6}{round(Delta_ISF[iFrame],1):>6}{round(acceISF[iFrame],1):>6}{round(emulISF[iFrame],1):>6}'
                 if featured('insReq'):
                     r_list += f'{origInsReq[iFrame]:>7}{emulInsReq[iFrame]:>6}'
                 if featured('SMB'):
@@ -1946,8 +1951,8 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                 entries[thisTime] = r_list
                     
         # ---   print the comparisons    -------------------------
-        head= "    ----time formated as---       -----target-----                     -Autosens-  -autoISF-   --5% range--    --lin.fit--    -----orig parabola fit-----    ---------------ISFs---------------    insulin Req   -maxBolus-   ---SMB---   ---tmpBasal---\n" \
-            + " id    UTC         UNIX       bg    orig     emul    cob   iob    act  orig  emul  orig emul   dura    avg     dura    avg     corr  dura  last-Δ  next-Δ    orig  prof  auto  high  rise  emul    orig   emul    orig emul   orig emul     orig    emul"
+        head= "    ----time formated as---       -----target-----                     -Autosens-  -autoISF-   --5% range--    --lin.fit--    -----orig parabola fit-----    ------------------ISFs------------------    insulin Req   -maxBolus-   ---SMB---   ---tmpBasal---\n" \
+            + " id    UTC         UNIX       bg    orig     emul    cob   iob    act  orig  emul  orig emul   dura    avg     dura    avg     corr  dura  last-Δ  next-Δ    orig  prof  auto  high  rise  acce  emul    orig   emul    orig emul   orig emul     orig    emul"
         #print('\n' + head)
         xyf.write(head + '\n')
         
@@ -1975,6 +1980,8 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         max_BZ_ISF = 0.0
         min_Delta_ISF= 999
         max_Delta_ISF= 0.0
+        min_acceISF= 999
+        max_acceISF= 0.0
         min_emulISF= 999
         max_emulISF= 0.0
         min_origSMB= 999
@@ -2000,7 +2007,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                         this_List = f'{round(thisDelta["parabola_fit_correlation"],4):>9}{round(thisDelta["parabola_fit_minutes"],1):>6}'
                         this_List+= f'{round(thisDelta["parabola_fit_last_delta"],2):>8}{round(thisDelta["parabola_fit_next_delta"],2):>8}'
             tabz += this_List
-            tabz += f'{round(origISF[i],1):>8}{round(profISF[i],1):>6}{round(autoISF[i],1):>6}{round(BZ_ISF[i],1):>6}{round(Delta_ISF[i],1):>6}{round(emulISF[i],1):>6}' 
+            tabz += f'{round(origISF[i],1):>8}{round(profISF[i],1):>6}{round(autoISF[i],1):>6}{round(BZ_ISF[i],1):>6}{round(Delta_ISF[i],1):>6}{round(acceISF[i],1):>6}{round(emulISF[i],1):>6}' 
             tabz += f'{origInsReq[i]:>8} {emulInsReq[i]:>6} ' 
             tabz += f'{origMaxBolus[i]:>7} {emulMaxBolus[i]:>4} {origSMB[i]:>6} {emulSMB[i]:>4} ' 
             tabz += f'{origBasal[i]:>9} {emulBasal[i]:>6}'
@@ -2034,6 +2041,8 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
             if max_BZ_ISF <BZ_ISF[i]:           max_BZ_ISF  = BZ_ISF[i]
             if min_Delta_ISF>Delta_ISF[i]:      min_Delta_ISF = Delta_ISF[i]
             if max_Delta_ISF<Delta_ISF[i]:      max_Delta_ISF = Delta_ISF[i]
+            if min_acceISF>acceISF[i]:          min_acceISF = acceISF[i]
+            if max_acceISF<acceISF[i]:          max_acceISF = acceISF[i]
             if min_emulISF>emulISF[i]:          min_emulISF = emulISF[i]
             if max_emulISF<emulISF[i]:          max_emulISF = emulISF[i]
             if min_origSMB>origSMB[i]:          min_origSMB = origSMB[i]
@@ -2043,21 +2052,21 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
             xyf.write(tabz + '\n')
         
         sepLine = ''
-        sepLine += 248 * '-'
+        sepLine += 254 * '-'
         sepLine += '\n'
         tabz = 'Minimum:'+ f'{min_bg:>24}' \
              + f'{round(min_origAS/10,2):>43} {round(min_emulAS/10,2):>5}' \
              + f'{round(min_origAI/10,2):>5} {round(min_emulAI/10,2):>5}' \
-             + f'{round(min_origISF,1):>69}{round(min_profISF,1):>6}{round(min_autoISF,1):>6}{round(min_BZ_ISF,1):>6}{round(min_Delta_ISF,1):>6}{round(min_emulISF,1):>6}' \
+             + f'{round(min_origISF,1):>69}{round(min_profISF,1):>6}{round(min_autoISF,1):>6}{round(min_BZ_ISF,1):>6}{round(min_Delta_ISF,1):>6}{round(min_acceISF,1):>6}{round(min_emulISF,1):>6}' \
              + f'{round(min_origSMB,1):>35} {round(min_emulSMB,1):>4}'
         xyf.write(sepLine + tabz + '\n')
         tabz = 'Maximum:'+ f'{max_bg:>24}' \
              + f'{round(max_origAS/10,2):>43} {round(max_emulAS/10,2):>5}' \
              + f'{round(max_origAI/10,2):>5} {round(max_emulAI/10,2):>5}' \
-             + f'{round(max_origISF,1):>69}{round(max_profISF,1):>6}{round(max_autoISF,1):>6}{round(max_BZ_ISF,1):>6}{round(max_Delta_ISF,1):>6}{round(max_emulISF,1):>6}' \
+             + f'{round(max_origISF,1):>69}{round(max_profISF,1):>6}{round(max_autoISF,1):>6}{round(max_BZ_ISF,1):>6}{round(max_Delta_ISF,1):>6}{round(max_acceISF,1):>6}{round(max_emulISF,1):>6}' \
              + f'{round(max_origSMB,1):>35} {round(max_emulSMB,1):>4}'
         xyf.write(tabz + '\n')
-        tabz = 'Totals:'+ f'{round(origSMBsum,1):>219} {round(emulSMBsum,1):>4} {round(origBasalint,2):>9} {round(emulBasalint,2):>6}'
+        tabz = 'Totals:'+ f'{round(origSMBsum,1):>225} {round(emulSMBsum,1):>4} {round(origBasalint,2):>9} {round(emulBasalint,2):>6}'
         xyf.write(sepLine + tabz + '\n' + sepLine)
 
         # ---   list all types of delta information    -----------
@@ -2122,9 +2131,9 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         if featured('fitsParabola') or featured('bestParabola'):                     # 21
             head1 += '   ----parabola fit----'
             head2 += '   dura  last-Δ  next-Δ'
-        if featured('ISF'):                             # 36; was 24
-            head1 += '  ---------------ISFs---------------'
-            head2 += '  orig  prof  auto  high  rise  emul'
+        if featured('ISF'):                             # 43; was 24 and 36
+            head1 += '   ------------------ISFs------------------'
+            head2 += '   orig  prof  auto  high  rise  acce  emul'
         if featured('insReq'):                          # 13
             head1 += '  insulin Req'
             head2 += '   orig  emul'

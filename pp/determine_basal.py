@@ -289,6 +289,7 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         console_error("autoISF disabled in Preferences")
         Fcasts['BZ_ISF'] = profile['sens'] 
         Fcasts['Delta_ISF'] = profile['sens']  
+        Fcasts['acceISF'] = profile['sens']  
         Fcasts['emulISF'] = sens
         return sens
     #new_parameter['autoISF_flat'] = profile['use_autoisf']  # make new menu method the master setting
@@ -298,6 +299,7 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
     sens_modified = False
     pp_ISF = 1
     delta_ISF = 1
+    acce_ISF = 1
     bg_off = target_bg+10 - avg05;                              # move from central BG=100 to target+10 as virtual BG'=100
     if 'bg_ISF' in new_parameter:
         bg_ISF = new_parameter['bg_ISF']
@@ -309,6 +311,7 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
     if (bg_ISF<1) :
         Fcasts['BZ_ISF'] = profile['sens']  / bg_ISF
         Fcasts['Delta_ISF'] = profile['sens']  
+        Fcasts['acceISF'] = profile['sens']  
         Fcasts['emulISF'] = sens / bg_ISF
         return min(720, round(profile['sens'] / bg_ISF, 1))        #// observe ISF maximum
     elif ( bg_ISF > 1 ) :
@@ -347,6 +350,22 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
                 console_error("delta_ISF adaptation", round(delta_ISF,2), "limited by autoisf_max", maxISFReduction)
             else :
                 console_error("delta_ISF adaptation is", delta_ISF)
+    #if 'parabola_fit_correlation' in profile:
+    #    parabola_fit_share = max(0, (profile['parabola_fit_correlation'] - 0.9) * 10)
+    #else:
+    #    parabola_fit_share = 0
+    if 'acce_ISF' in new_parameter:
+        acce_ISF = new_parameter['acce_ISF']
+    else:
+        console_error("acce_ISF not defined in emulator")
+    #else:
+    #    acce_ISF = 1 + max(0, acce_ISF * profile['postmeal_ISF_weight'])
+    if (acce_ISF != 1) :
+        sens_modified = True
+    if (maxISFReduction < acce_ISF) :
+        console_error("acce_ISF adaptation", round(acce_ISF,2), "limited by autoisf_max", maxISFReduction)
+    else :
+        console_error("acce_ISF adaptation is", acce_ISF)
 
     levelISF = 1
     weightISF = profile['autoisf_hourlychange']           #// mod 7d: specify factor directly; use factor 0 to shut autoISF OFF
@@ -369,11 +388,13 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
     if ( sens_modified ) :
         Fcasts['BZ_ISF'] = profile['sens']  / bg_ISF
         Fcasts['Delta_ISF'] = profile['sens']  / max(delta_ISF, pp_ISF)
-        liftISF = max(min(maxISFReduction, max(levelISF, bg_ISF, delta_ISF, pp_ISF)), sensitivityRatio)  #// corrected logic on 30.Jan.2021
+        Fcasts['acceISF'] = profile['sens']  / acce_ISF
+        liftISF = max(min(maxISFReduction, max(levelISF, bg_ISF, delta_ISF, acce_ISF, pp_ISF)), sensitivityRatio)  #// corrected logic on 30.Jan.2021
         sens = round(profile['sens'] / liftISF, 1)
     else:
         Fcasts['BZ_ISF'] = profile['sens']  / bg_ISF
         Fcasts['Delta_ISF'] = profile['sens']  / max(delta_ISF, pp_ISF)
+        Fcasts['acceISF'] = profile['sens']  / acce_ISF
     Fcasts['emulISF'] = sens
     emulAI_ratio[-1] = levelISF*10
 
