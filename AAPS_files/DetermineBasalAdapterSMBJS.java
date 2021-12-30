@@ -248,6 +248,12 @@ public class DetermineBasalAdapterSMBJS {
         mProfile.put("sens", profile.getIsfMgdl());
         mProfile.put("max_daily_safety_multiplier", sp.getInt(R.string.key_openapsama_max_daily_safety_multiplier, 3));
         mProfile.put("current_basal_safety_multiplier", sp.getDouble(R.string.key_openapsama_current_basal_safety_multiplier, 4d));
+        // mod 10: include SMB manipulations to be accessible in determine-basal
+        mProfile.put("smb_delivery_ratio", sp.getDouble(R.string.key_openapsama_smb_delivery_ratio, 0.5d));
+        mProfile.put("smb_delivery_ratio_min", sp.getDouble(R.string.key_openapsama_smb_delivery_ratio_min, 0.5d));
+        mProfile.put("smb_delivery_ratio_max", sp.getDouble(R.string.key_openapsama_smb_delivery_ratio_max, 0.9d));
+        mProfile.put("smb_delivery_ratio_bg_range", sp.getDouble(R.string.key_openapsama_smb_delivery_ratio_bg_range, 40d));
+        mProfile.put("smb_max_range_extension", sp.getDouble(R.string.key_openapsama_smb_max_range_extension, 1.2d));
 
         //mProfile.put("high_temptarget_raises_sensitivity", SP.getBoolean(R.string.key_high_temptarget_raises_sensitivity, SMBDefaults.high_temptarget_raises_sensitivity));
         mProfile.put("high_temptarget_raises_sensitivity", false);
@@ -277,8 +283,11 @@ public class DetermineBasalAdapterSMBJS {
         mProfile.put("enableSMB_with_COB", smbEnabled && sp.getBoolean(R.string.key_enableSMB_with_COB, false));
         mProfile.put("enableSMB_with_temptarget", smbEnabled && sp.getBoolean(R.string.key_enableSMB_with_temptarget, false));
         mProfile.put("allowSMB_with_high_temptarget", smbEnabled && sp.getBoolean(R.string.key_allowSMB_with_high_temptarget, false));
-        mProfile.put("enableSMB_always", smbEnabled && sp.getBoolean(R.string.key_enableSMB_always, false) && advancedFiltering);
-        mProfile.put("enableSMB_after_carbs", smbEnabled && sp.getBoolean(R.string.key_enableSMB_after_carbs, false) && advancedFiltering);
+        // mod 13: allow SMBalways and enableSMB_after_carbs if selected in preferences
+        //rofile.put("enableSMB_always", smbEnabled && sp.getBoolean(R.string.key_enableSMB_always, false) && advancedFiltering);
+        //rofile.put("enableSMB_after_carbs", smbEnabled && sp.getBoolean(R.string.key_enableSMB_after_carbs, false) && advancedFiltering);
+        mProfile.put("enableSMB_always", smbEnabled && sp.getBoolean(R.string.key_enableSMB_always, false));            // && advancedFiltering);
+        mProfile.put("enableSMB_after_carbs", smbEnabled && sp.getBoolean(R.string.key_enableSMB_after_carbs, false));  //  && advancedFiltering);
         mProfile.put("maxSMBBasalMinutes", sp.getInt(R.string.key_smbmaxminutes, SMBDefaults.maxSMBBasalMinutes));
         mProfile.put("maxUAMSMBBasalMinutes", sp.getInt(R.string.key_uamsmbmaxminutes, SMBDefaults.maxUAMSMBBasalMinutes));
         //set the min SMB amount to be the amount set by the pump.
@@ -288,9 +297,23 @@ public class DetermineBasalAdapterSMBJS {
         mProfile.put("current_basal", basalrate);
         mProfile.put("temptargetSet", tempTargetSet);
         mProfile.put("autosens_max", SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_autosens_max, "1.2")));
-        // gz mod 7d: can I add autosens_min here?
+        // mod 7e: can I add use autoisf here?
+        mProfile.put("use_autoisf", sp.getBoolean(R.string.key_openapsama_useautoisf, false));
+        // mod 7f: can I add use autoisf with COB here?
+        mProfile.put("enableautoisf_with_COB", sp.getBoolean(R.string.enableautoISFwithcob, false));
+        // mod 14f: for pp_ISF without meal
+        mProfile.put("enableppisf_always", sp.getBoolean("Enable postprandial ISF always", false));
+        // mod 7d: can I add autosens_min here?
         mProfile.put("autoisf_max",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_autoisf_max, "1.2")));
+        mProfile.put("autoisf_min",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_autoisf_min, "0.7")));
         mProfile.put("autoisf_hourlychange",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_autoisf_hourlychange, "0.2")));
+        mProfile.put("lower_ISFrange_weight",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_lower_ISFrange_weight, "1.0")));
+        mProfile.put("higher_ISFrange_weight",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_higher_ISFrange_weight, "1.0")));
+        mProfile.put("delta_ISFrange_weight",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_delta_ISFrange_weight, "1.0")));
+        mProfile.put("postmeal_ISF_weight",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_postmeal_ISF_weight, "0.02")));
+        mProfile.put("postmeal_ISF_duration",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_postmeal_ISF_duration, "120")));
+        mProfile.put("bgAccel_ISF_weight",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_BgAccel_ISF_weight, "0.02")));
+        mProfile.put("bgBrake_ISF_weight",  SafeParse.stringToDouble(sp.getString(R.string.key_openapsama_BgBrake_ISF_weight, "0.95")));
 
         if (profileFunction.getUnits().equals(Constants.MMOL)) {
             mProfile.put("out_units", "mmol/L");
@@ -325,9 +348,23 @@ public class DetermineBasalAdapterSMBJS {
         mGlucoseStatus.put("short_avgdelta", glucoseStatus.short_avgdelta);
         mGlucoseStatus.put("long_avgdelta", glucoseStatus.long_avgdelta);
         mGlucoseStatus.put("date", glucoseStatus.date);
-        // GZ mod 7: append 2 variables for 5% range
+        // mod 7: append 2 variables for 5% range
         mGlucoseStatus.put("autoISF_duration", glucoseStatus.autoISF_duration);
         mGlucoseStatus.put("autoISF_average", glucoseStatus.autoISF_average);
+        // mod 8: append variables for linear fit
+        mGlucoseStatus.put("slope05", glucoseStatus.slope05);
+        mGlucoseStatus.put("slope15", glucoseStatus.slope15);
+        mGlucoseStatus.put("slope40", glucoseStatus.slope40);
+        // mod 14g: append variables for quadratic fit
+        mGlucoseStatus.put("parabola_fit_correlation", glucoseStatus.r_squ);
+        mGlucoseStatus.put("parabola_fit_minutes", glucoseStatus.dura_p);
+        mGlucoseStatus.put("parabola_fit_last_delta", glucoseStatus.delta_pl);
+        mGlucoseStatus.put("parabola_fit_next_delta", glucoseStatus.delta_pn);
+        mGlucoseStatus.put("parabola_fit_a0", glucoseStatus.a_0);
+        mGlucoseStatus.put("parabola_fit_a1", glucoseStatus.a_1);
+        mGlucoseStatus.put("parabola_fit_a2", glucoseStatus.a_2);
+        mGlucoseStatus.put("bg_acceleration", glucoseStatus.bg_acceleration);
+
         mMealData = new JSONObject();
         mMealData.put("carbs", mealData.carbs);
         mMealData.put("boluses", mealData.boluses);
@@ -350,7 +387,7 @@ public class DetermineBasalAdapterSMBJS {
 
         mCurrentTime = now;
 
-        mIsSaveCgmSource = isSaveCgmSource;
+        mIsSaveCgmSource = true;                // for non_Libre use; was: isSaveCgmSource;
     }
 
     private Object makeParam(JSONObject jsonObject, Context rhino, Scriptable scope) {
