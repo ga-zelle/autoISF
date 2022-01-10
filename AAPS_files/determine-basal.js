@@ -227,7 +227,7 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
         } else {
             var acce_weight = profile.bgAccel_ISF_weight;
         }
-        acce_ISF = 1 + bg_acce * cap_weight * acce_weight ;
+        acce_ISF = 1 + bg_acce * cap_weight * acce_weight * fit_share ;
         if ( acce_ISF != 1 ) {
            sens_modified = true;
         }
