@@ -990,6 +990,7 @@ def scanLogfile(fn, entries):
                             #elif dataType == 110:   pass                    # V 2 7:     CurrentTime: 1604776609511
                             #elif dataType != 163:   print('unhandled dataType:', str(dataType), 'row', str(lcount), 'of file',fn) # any but 2.7 RESULT
                             #version_set = True                              # keep until next logfile is loaded
+                            pass
                         #elif Block2[:-4] == '[DetermineBasalAdapterSMBJS.invoke():':  # various input items for loop
                         #print (str(lcount), str(dataType), str(dataType_offset), dataTxt + dataStr[17:60])
                         if   dataTxt[:16] == 'RhinoException: ' :           code_error(lcount, dataStr)
@@ -1003,16 +1004,26 @@ def scanLogfile(fn, entries):
                         #elif dataType == dataType_offset+145:               checkCarbsNeeded(dataStr[8:], lcount)   # result record in AAPS2.7
                         #elif dataType == dataType_offset+147:               checkCarbsNeeded(dataStr[8:], lcount)   # result record in AAPS2.8 Wolfgang Spänle
                         #elif dataType == dataType_offset+146:               checkCarbsNeeded(dataStr[8:], lcount)   # result record in AAPS2.8 / Phillip
+                        pass
                     elif Block2 == '[LoggerCallback.jsFunction_log():39]' \
                     or   Block2 == '[LoggerCallback.jsFunction_log():42]':  # script debug info from console.error; '42:' is for >= V2.7
                         PrepareSMB(sLine, log, lcount)   
-                    elif Block2 == '[DbLogger.dbAdd():29]':                 ################## flag for V2.5.1
+                    elif Block2 == '[DbLogger.dbAdd():29]':                             ################## flag for V2.5.1
                         Curly =  hole(sLine, 1+sOffset+len(Block2), '{', '}')
                         #print('calling TreatLoop in row '+str(lcount)+' with\n'+Curly)
                         if Curly.find('{"device":"openaps:')==0:   
                             cont = TreatLoop(Curly, log, lcount)
                             if cont=='STOP' or cont=='SYNTAX':     return cont
-                elif zeile.find('data:{"device":"openaps:') == 0 :          ################## flag for V2.6.1
+                    elif zeile.find('[NSClientPlugin.onStart$lambda-5():124]') > 0 :    ################## flag for V3.0dev
+                        Curly =  hole(zeile, 5, '{', '}')
+                        #print('calling TreatLoop in row '+str(lcount)+' with\n'+Curly)
+                        #if  Curly.find('{"device":"openaps:')==0 \
+                        #and Curly.find('"openaps":{"suggested":{')>0 :
+                        if  Curly.find('"openaps":{"suggested":{')>0 :
+                            #and 'lastTempAge' in SMBreason :   
+                            cont = TreatLoop(Curly, log, lcount)
+                            if cont=='STOP' or cont=='SYNTAX':     return cont
+                elif zeile.find('data:{"device":"openaps:') == 0 :                      ################## flag for V2.6.1 ff
                     Curly =  hole(zeile, 5, '{', '}')
                     #print('calling TreatLoop in row '+str(lcount)+' with\n'+Curly)
                     if  Curly.find('{"device":"openaps:')==0 \
@@ -1837,7 +1848,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         varLabel = varLabel[:-4]
     else:
         varFile = varFile + '.vdf'
-    #log_msg('inside all_parameters_known -->\nvarFile='+varFile+'\nvarLabel='+varLabel)
+    #log_msg('inside all_parameters_known -->\nvarFile='+varFile+'\nvarLabel='+varLabel)#   
     logListe = glob.glob(myseek+myfile, recursive=False)
     #print ('logListe:', str(logListe))
     # ---   add sorting info    -----------------------------------
