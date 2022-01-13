@@ -420,9 +420,9 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         Fcasts['BZ_ISF'] = profile['sens'] / bg_ISF
         Fcasts['Delta_ISF'] = profile['sens'] / max(delta_ISF, pp_ISF)
         Fcasts['acceISF'] = profile['sens']  / acce_ISF
-        liftISF = max(min(maxISFReduction, max(levelISF, bg_ISF, delta_ISF, acce_ISF, pp_ISF)), sensitivityRatio)  #// corrected logic on 30.Jan.2021
-        if acce_ISF<1 and liftISF>1 :
-            console_error("strongest ISF factor", liftISF, "weakened to", liftISF*acce_ISF, "as bg decelerates already")  #// mod V14j: brakes on for otherwise stronger ISF
+        liftISF = max(min(maxISFReduction, max(levelISF, bg_ISF, delta_ISF, acce_ISF, pp_ISF)), sensitivityRatio)  #// corrected logic on 30.Jan.2022
+        if acce_ISF<1 and liftISF>=1 :
+            console_error("strongest ISF factor", liftISF, "weakened to", liftISF*acce_ISF, "as bg decelerates already")  #// mod V14j: brakes on for otherwise stronger or stable ISF
             liftISF = liftISF * acce_ISF                    # put the deceleration brakes on
         sens = round(profile['sens'] / liftISF, 1)
     else:
