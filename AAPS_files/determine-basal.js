@@ -201,7 +201,7 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
 
     // start of mod V14j: calculate acce_ISF from bg acceleration and adapt ISF accordingly
     var bg_acce = glucose_status.bg_acceleration;
-    var minmax_delta = - glucose_status.parabola_fit_a1/2/glucose_status.parabola_fit_a2 * 5;       // back from 5min block  1 min
+    var minmax_delta = - glucose_status.parabola_fit_a1/2/glucose_status.parabola_fit_a2 * 5;       // back from 5min block to 1 min
     var minmax_value = round(glucose_status.parabola_fit_a0 - minmax_delta*minmax_delta/25*glucose_status.parabola_fit_a2, 1);
     minmax_delta = round(minmax_delta, 1)
     if (minmax_delta<0 && bg_acce<0) {
@@ -227,7 +227,7 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
         } else {
             var acce_weight = profile.bgAccel_ISF_weight;
         }
-        acce_ISF = 1 + bg_acce * cap_weight * acce_weight * fit_share ;
+        acce_ISF = 1 + bg_acce * cap_weight * acce_weight * fit_share;
         if ( acce_ISF != 1 ) {
            sens_modified = true;
         }
@@ -313,11 +313,11 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
         }
     }
     if ( sens_modified ) {
-        var liftISF = Math.max(Math.min(maxISFReduction, Math.max(levelISF, bg_ISF, delta_ISF, acce_ISF, pp_ISF)), sensitivityRatio);  // corrected logic on 30.Jan.2021; mod V14j
-        if ( acce_ISF<1 && liftISF>1 ) {                                                                // mod V14j: brakes on for otherwise stronger ISF
-            console.error("strongest ISF factor", liftISF, "weakened to", liftISF*acce_ISF, "as bg decelerates already");   // mod V14j: brakes on for otherwise stronger ISF
-            liftISF = liftISF * acce_ISF;                                                               // mod V14j: brakes on for otherwise stronger ISF
-        }                                                                                               // mod V14j: brakes on for otherwise stronger ISF
+        var liftISF = Math.max(Math.min(maxISFReduction, Math.max(levelISF, bg_ISF, delta_ISF, acce_ISF, pp_ISF)), sensitivityRatio);  // corrected logic on 30.JAN.2022; mod V14j
+        if ( acce_ISF<1 && liftISF>=1 ) {                                                               // mod V14j: 13.JAN.2022 brakes on for otherwise stronger or stable ISF
+            console.error("strongest ISF factor", liftISF, "weakened to", liftISF*acce_ISF, "as bg decelerates already");   // mod V14j
+            liftISF = liftISF * acce_ISF;                                                               // mod V14j: brakes on for otherwise stronger or stable ISF
+        }                                                                                               // mod V14j: brakes on for otherwise stronger or stable ISF
         sens = round(profile.sens / liftISF, 1);
     }
     return sens;
