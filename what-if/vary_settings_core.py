@@ -250,6 +250,22 @@ def basalFromEmulation(returned, lcount):
         tempReq = currenttemp['rate']           # no change, keep current basal rate
     return str(round(tempReq,4))
 
+def STAIR_scan(stmp, myVal, woSTAIR, type_len, STAIR_json):
+    # times must be in Greenwich time i.e. UTC but sorted from 0-23
+    stmp_day = stmp[:11]
+    for STEP in STAIR_json:
+        newVal = STAIR_json[STEP]
+        break                                                           # use first entry to extrapolate backwards
+    for STEP in STAIR_json:
+        if stmp_day+STEP == stmp:
+            newVal = STAIR_json[STEP]
+            break
+        elif stmp_day+STEP > stmp:
+            break
+        newVal = STAIR_json[STEP]
+    myVal = myVal[:woSTAIR] + str(newVal) + myVal[woSTAIR+6+type_len:]
+    return myVal
+
 def setVariant(stmp):
     # set the what-if scenario
     global autosens_data
@@ -263,12 +279,6 @@ def setVariant(stmp):
     # additional parameters collected here
     # these need an according modification in "determine_basal.py"
     #rofile['use_autoisf'] = False                      ### not enabled in standard AAPS and not even available
-    #rofile['enableautoisf_with_COB'] = False           ### Default in AAPS prototype     
-    #rofile['autoisf_max'] = 1.2                        ### Default in AAPS prototype    
-    #rofile['autoisf_hourlychange'] = 0.2               ### Default in AAPS prototype    
-    #rofile['smb_delivery_ratio'] = 0.5                 ### the AAPS standard   
-    #rofile['smb_delivery_ratio_bg_range'] = 0          ### disables linear rise of SMB_delivery_ratio   
-    #rofile['smb_max_range_extension'] = 1              ### the AAPS standard   
     new_parameter = {}                                  
     temp          = {}                                  ### holds interim values in shorter notation
     # first, do the AAPS standard assignments           ### variations are set in the <variant>.dat file
@@ -280,19 +290,18 @@ def setVariant(stmp):
     new_parameter['maxBolusTargetRatio'] = 1.001        ### add'l parameter; AAPS is fix at 1, bit i saw rounding problems otherwise
     new_parameter['insulinCapBelowTarget'] = False      ### add'l parameter; AAPS is fix at False; enable capping below
     new_parameter['CapFactor'] = 0                      ### add'l parameter; AAPS is fix at 0; recently I used 4, but try 5
-    #ew_parameter['autoISF_flat'] = False               ### add'l parameter; AAPS is fix at False; disable autoISF fpr resistance
-    #ew_parameter['autoISF_slope'] = False              ### add'l parameter; AAPS is fix at False; disable autoISF for rise
-    #ew_parameter['autoISF_low'] = False                ### add'l parameter; AAPS is fix at False; disable autoISF for lows
     new_parameter['CheckLibreError'] = False            ### add'l parameter: AAPS 2.7 is at True for the stupid Libre CGM error handler, but Emulator skips the error in original
     new_parameter['AAPS_Version'] = AAPS_Version        ### place it before so it could be modified later
-    #ew_parameter['bestParabola'] = False               ### add'l parameter; AAPS is fix at False; True for fit of quadratic curve
     new_parameter['LessSMBatModerateBG'] = False        ### additional parameter; AAPS is fix at False; reduce SMB if ...
     new_parameter['LessSMBbelow'] = 0.0                 ### ... bg below this value
     if AAPS_Version == '<2.7':                          
         profile['maxUAMSMBBasalMinutes'] = 30           ### use the 2.7 default just in case
         profile['bolus_increment'] = 0.1                ### use the 2.7 default just in case
     ####################################################################################################################################
-    STAIR    = {}                                                                   # for staircase type functions like basal
+    STAIR    = {}                                                                   # for general, profile like definitions
+    STAIR_BAS= {}                                                                   # for profile definition of basal rate
+    STAIR_CR = {}                                                                   # for profile definition of carb ratio
+    STAIR_ISF= {}                                                                   # for profile definition of ISF
     INTERPOL = []                                                                   # for linear interpolation between times
     POLYGON  = []                                                                   # for linear interpolation between numbers
     flag_staircase = False
@@ -321,8 +330,18 @@ def setVariant(stmp):
                 while myVal[-1] == ' ' :    myVal = myVal[:-1]                      # truncate trailing BLANKS
             #print('['+myArray+'], ['+myItem+'], ['+myVal+']')
            
+            woSTAIR = myVal.find('STAIR_')
+            if woSTAIR >= 0:                                                        # get value from last valid step
+                if   myVal[woSTAIR+6:woSTAIR+9] == 'BAS':    myVal = STAIR_scan(stmp, myVal, woSTAIR, 3, STAIR_BAS)
+                elif myVal[woSTAIR+6:woSTAIR+8] == 'CR' :    myVal = STAIR_scan(stmp, myVal, woSTAIR, 2, STAIR_CR)
+                elif myVal[woSTAIR+6:woSTAIR+9] == 'ISF':    myVal = STAIR_scan(stmp, myVal, woSTAIR, 3, STAIR_ISF)
+                else:                                        print('key', myVal[woSTAIR+6:woSTAIR+9], 'nicht gefunden')
+
             woSTAIR = myVal.find('STAIR')
             if woSTAIR >= 0:                                                        # get value from last valid step
+                for STEP in STAIR:
+                    newVal = STAIR[STEP]
+                    break                                                           # use first entry to extrapolate backwards
                 for STEP in STAIR:
                     if STEP == stmp:
                         newVal = STAIR[STEP]
@@ -446,9 +465,6 @@ def setVariant(stmp):
                     logmsg = 'edited old value of '+str(temp[myItem])+' in'
                 temp[myItem] = eval(myVal)
                 logres = str(temp[myItem])
-            elif myArray == 'STAIR' :
-                STAIR[myItem] = eval(myVal)
-                logres = myVal
             elif myArray == 'new_parameter' :                                       # allow also string type assignments like "<V2.7"
                 if myItem in new_parameter :
                     logmsg = 'edited old value of '+str(new_parameter[myItem])+' in'
@@ -459,6 +475,16 @@ def setVariant(stmp):
                 logres = str(new_parameter[myItem])
             elif myArray == 'STAIR' :
                 STAIR[myItem] = eval(myVal)
+                logres = myVal
+            elif myArray == 'STAIR_BAS' :
+                STAIR_BAS[myItem] = eval(myVal)
+                logres = myVal
+            elif myArray == 'STAIR_CR' :
+                STAIR_CR[myItem] = eval(myVal)
+                logres = myVal
+            elif myArray == 'STAIR_ISF' :
+                STAIR_ISF[myItem] = eval(myVal)
+                logres = myVal
             elif myArray == 'INTERPOL' :
                 if len(myItem) < 24:                                          # incomplete UTC time label
                     oldLen = len(myItem)
@@ -1190,32 +1216,38 @@ def getBestParabolaBG(iFrame):
 ##  y = a2*x^2 + a1*x + a0      or      
 ##  y = a*x^2  + b*x  + c       respectively
 
-    if iFrame < 3:  return 0,0, {}, -1    # first 3 points make a trivial parabola
-
-    corrMin = 0.90                        # go backwards until the correlation coefficient goes below
-    sy    = 0                             # y
-    sx    = 0                             # x
-    sx2   = 0                             # x^2
-    sx3   = 0                             # x^3
-    sx4   = 0                             # x^4
-    sxy   = 0                             # x*y
-    sx2y  = 0                             # x^2*y
+    if iFrame < 3:  return 0,0, {}, -1      # first 3 points make a trivial parabola
+    
+    corrMin = 0.90                          # go backwards until the correlation coefficient goes below
+    sy    = 0                               # y
+    sx    = 0                               # x
+    sx2   = 0                               # x^2
+    sx3   = 0                               # x^3
+    sx4   = 0                               # x^4
+    sxy   = 0                               # x*y
+    sx2y  = 0                               # x^2*y
     parabs  = {}
     corrMax = 0
     sum_of_squares = 0
+    # for best numerical accurarcy time and bg must be of same order of magnitude
+    global scaleTime, scaleBg
+    scaleTime =   1                         # in sec; values are 0, 300, 600, 900, 1200, ... while testing
+    scaleTime = 300                         # in 5m; values are  0,   1,   2,   3,    4, ...
+    scaleBg   =   1                         # TIR range is now  70 - 180                 ... while testing
+    scaleBg   =  50                         # TIR range is now 1.4 - 3.6
 
     for i in range(iFrame, -1, -1):
         #if bgTime[iFrame] - bgTime[i] > 45*60:      break              # range not longer than 45m
-        ti     = bgTime[i] -bgTime[iFrame]         # time offset to make the numbers smaller for numerical accuracy
-        if -ti > 45*60:      break                                              # range not longer than 45m
+        ti     = (bgTime[i] -bgTime[iFrame])/scaleTime      # time offset to make the numbers smaller for numerical accuracy
+        if -ti*scaleTime > 45*60:      break                # range not longer than 45m
 
         sx    += ti
         sx2   += pow(ti, 2)
         sx3   += pow(ti, 3)
         sx4   += pow(ti, 4)
-        sy    +=              bg[i]
-        sxy   += ti         * bg[i]
-        sx2y  += pow(ti, 2) * bg[i]
+        sy    +=              bg[i]/scaleBg
+        sxy   += ti         * bg[i]/scaleBg
+        sx2y  += pow(ti, 2) * bg[i]/scaleBg
         n = iFrame - i + 1
         #print (str(sx), str(sy), str(sxy), str(sx2), str(sx3), str(sx4), str(sx2y))
         if n<=3:
@@ -1239,29 +1271,30 @@ def getBestParabolaBG(iFrame):
             s_squares = 0
             s_residual_squares = 0
             for j in range(i, iFrame+1):
-                s_squares          += (bg[j] - y_mean)**2
-                s_residual_squares += (bg[j] - (a*(bgTime[j]-bgTime[iFrame])**2 + b*(bgTime[j]-bgTime[iFrame]) + c))**2
+                s_squares          += (bg[j]/scaleBg - y_mean)**2
+                bg_j                = a*((bgTime[j]-bgTime[iFrame])/scaleTime)**2 + b*(bgTime[j]-bgTime[iFrame])/scaleTime + c
+                s_residual_squares += (bg[j]/scaleBg - bg_j)**2
+                #print('a='+str(a), 'b='+str(b), 'c='+str(c), 'bg_j='+str(bg_j))
 
             if s_squares == 0.0:
                 #print (loop_label[iFrame], 'has', str(s_residual_squares), 'in subloop', str(i))
                 r_sq = 0.64
             else:
                 r_sq = 1 - s_residual_squares/s_squares
-            #print('y_mean='+str(y_mean), '  R2='+str(r_sq))
+                #print('y_mean='+str(y_mean), ' squ='+str(s_squares), ' res='+str(s_residual_squares), ' R2='+str(r_sq))
             
-            dur     = -ti/60    #(bgTime[iFrame]-bgTime[i])/60
+            dur     = -ti*scaleTime/60    #(bgTime[iFrame]-bgTime[i])/60
             #print(loop_label[i], 'with', str(n), 'elements has   a =', str(a),' b=', str(b), ' c=', str(c))
             #print (i, loop_label[i], str(bgTime[i]), str(bg[i]), str(dur))
             #if r_sq < corrMin :      break  # correlation too bad 
 
             if i<=iFrame-2:      
-                if r_sq>0:   parabs[i] = dict(n=n-1, a2=a, a1=b, a0=c, corr=r_sq, dur=dur)
+                if r_sq>0:   parabs[i] = dict(n=n-1, a2=a*scaleBg, a1=b*scaleBg, a0=c*scaleBg, corr=r_sq, dur=dur)
                 if r_sq>corrMax:
                     corrMax = r_sq
                     iMax = i
                     dura_p  = dur   #( loop_mills[iFrame] - loop_mills[i] ) / 60
-                    #elta_p = a*(pow(loop_mills[i]-loop_mills[iFrame]+5*60,2) - pow(loop_mills[i]-loop_mills[iFrame],2)) + b*(5*60-0)     # 5 minute slope to next forecast
-                    delta_p = a*(pow(                                +5*60,2)                                          ) + b*(5*60-0)     # 5 minute slope to next forecast
+                    delta_p = scaleBg*( a*(pow(5*60/scaleTime,2)) + b*(5*60/scaleTime) )    # 5 minute slope to next forecast
             #print ('some fit', str(n-1), str(b), str(a),str(r_sq))
     if corrMax == 0:         return 0,0, parabs, -1   # no good correlation found
     #print('found these parabolas for time', loop_label[iFrame])
@@ -1341,8 +1374,10 @@ def XYplots(loopCount, head1, head2, entries) :
         yStep =  6      # every 30 minutes
     elif loopCount <=120:
         yStep = 12      # every 60 minutes
+    elif loopCount <=480:
+        yStep = 48      # every 4 hours
     else :
-        yStep = 24      # every 120 minutes
+        yStep = 96      # every 8 hours
     yTicks = []
     yLabels= []
     
@@ -1508,9 +1543,9 @@ def XYplots(loopCount, head1, head2, entries) :
                             #    tminmax = -a1/(2*a2)+5*60                               # time of min or max +5min
                             #    tx = max(tx, tminmax)                                   # if min/max is ahead of bgTime
                             while tx >= bgTime[iFrame]-dur*60:
-                                ti = tx - bgTime[iFrame]
+                                ti = (tx - bgTime[iFrame])/300
                                 bfit.append(a2*pow(ti,2) + a1*ti + a0)
-                                tfit.append((ti+bgTime[iFrame])*0+tx*1)
+                                tfit.append(tx)
                                 #print('interim', str(i), str(tfit), str((bfit)))
                                 tx += -2.5*60                                           # go  backwards in fit window
                             if not isBest and featured('fitsParabola'):

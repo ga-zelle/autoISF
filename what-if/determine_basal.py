@@ -412,7 +412,7 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         avg05_weight = weightISF / target_bg;                                      #// mod gz7b: provide access from AAPS
         levelISF += dura05_weight*avg05_weight*(avg05-target_bg)
         sens_modified = True
-        console_error("dura_ISF reports ISF", sens, "did not do it for "+str(dura05)+"m; go more aggressive by", round(levelISF,2))
+        console_error("dura_ISF  adaptation is", round(levelISF,2), "because ISF", sens, "did not do it for", dura05,"m")
         if (maxISFReduction < levelISF) :
             console_error("dura_ISF adaptation", round(levelISF,2), "limited by autoisf_max", maxISFReduction)
 
