@@ -591,7 +591,7 @@ def TreatLoop(Curly, log, lcount):
         if maxBol== '' :    maxBol= '0'
         origSMB.append(eval(mySMB))
         origMaxBolus.append(eval(maxBol))
-        log.write('\n========== DELTA in row ' + str(lcount) + ' SMB ========== of logfile '+fn+'\n')
+        log.write('\n========== orig loop in row ' + str(lcount) + ' ========== of logfile '+fn+'\n')
         log.write('  created at= ' + stmp + '\n')
         log.write(SMBreason['script'])                              # the script debug section
         #printVal(suggest, 'bg', log)
@@ -745,12 +745,11 @@ def PrepareSMB(zeile, log, lcount):
         isf_end = what.find(' CSF:')
         SMBreason['origISF'] = eval(what[isf_anf+6:isf_end])
         #print (str(lcount), str(origISF))
-    elif what.find('more aggressive') >0:               # redefined original from autoISF
-        isf_anf = what.find('more aggressive')
-        origAI_ratio.append(eval(what[isf_anf+18:])*10)
-        SMBreason['origISF'] = eval(what[isf_anf+18:])
-        #print (str(lcount), str(origISF))
-        
+    #elif what.find('more aggressive') >0:               # redefined original from autoISF
+    #    isf_anf = what.find('more aggressive')
+    #    origAI_ratio.append(eval(what[isf_anf+18:])*10)
+    #    SMBreason['origISF'] = eval(what[isf_anf+18:])
+    #    #print (str(lcount), str(origISF))        
     pass
 
 def featured(Option):
