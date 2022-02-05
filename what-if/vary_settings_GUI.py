@@ -1,4 +1,4 @@
-import  os
+import  os, sys
 import  glob
 #from Lib import subprocess
 import  contextlib
@@ -98,6 +98,7 @@ def reset_all():
     # result frame
     logfil.set('')
     tabfil.set('')
+    deltafil.set('')
     txtorig.set('')
     txtemul.set('')
     pdffil.set('')
@@ -501,6 +502,13 @@ def get_logfil():
     if newaf != "":
         logfil.set(newaf)
 
+def get_deltafil():
+    oldaf = deltafil.get()
+    loglist = {'deltafile {.delta}'}  
+    newaf = filedialog.askopenfilename(filetypes=loglist, initialdir=wdir.get(), initialfile=oldaf)
+    if newaf != "":
+        deltafil.set(newaf)
+
 def get_tabfil():
     oldaf = tabfil.get()
     loglist = {'logfile {.tab}'}  
@@ -533,6 +541,18 @@ def edit_logfil():
     oldvf = logfil.get()
     try:
         os.startfile(oldvf)                                                     # requires DOS knows to edit ".log" files
+    except:                                                                     # catch *all* exceptions
+        book.select(4)                                                          # activate result tab
+        tb = sys.exc_info()[2]
+        sub_issue("Problem in vary_GUI.py")
+        for ele in traceback.format_tb(tb):
+            sub_issue(ele[:-1])                                                 # sub appends <CR>
+        sub_issue(str(sys.exc_info()[1]))
+
+def edit_deltafil():
+    oldvf = deltafil.get()
+    try:
+        os.startfile(oldvf)                                                     # requires DOS knows to edit ".delta" files
     except:                                                                     # catch *all* exceptions
         book.select(4)                                                          # activate result tab
         tb = sys.exc_info()[2]
@@ -608,26 +628,33 @@ tabfil_entry.grid(column=0, columnspan=3, row=rfilRow+2, sticky=(W,E), padx=5)
 ttk.Button(resframe, text="Browse", command=get_tabfil).grid( column=3, row=rfilRow+2, sticky=(W, E), padx=10)
 ttk.Button(resframe, text="Show",   command=edit_tabfil).grid(column=4, row=rfilRow+2, sticky=(W, E), padx=10)
 
-ttk.Label(resframe, text="\n*.orig.txt - Your short log of original analysis").grid(column=0, columnspan=2, row=rfilRow+3, sticky=(W), padx=5)
+ttk.Label(resframe, text="\n*.delta - Your table comparing bg deltas of original vs emulation").grid(column=0, columnspan=2, row=rfilRow+3, sticky=(W), padx=5)
+deltafil = StringVar()
+deltafil_entry = ttk.Entry(resframe, width=130, textvariable=deltafil)            #, justify='right')
+deltafil_entry.grid(column=0, columnspan=3, row=rfilRow+4, sticky=(W,E), padx=5)
+ttk.Button(resframe, text="Browse", command=get_deltafil).grid( column=3, row=rfilRow+4, sticky=(W, E), padx=10)
+ttk.Button(resframe, text="Show",   command=edit_deltafil).grid(column=4, row=rfilRow+4, sticky=(W, E), padx=10)
+
+ttk.Label(resframe, text="\n*.orig.txt - Your short log of original analysis").grid(column=0, columnspan=2, row=rfilRow+5, sticky=(W), padx=5)
 txtorig = StringVar()
 txtorig_entry = ttk.Entry(resframe, width=130, textvariable=txtorig)              #, justify='right')
-txtorig_entry.grid(column=0, columnspan=3, row=rfilRow+4, sticky=(W,E), padx=5)
-ttk.Button(resframe, text="Browse", command=get_txtorig).grid( column=3, row=rfilRow+4, sticky=(W, E), padx=10)
-ttk.Button(resframe, text="Show",   command=edit_txtorig).grid(column=4, row=rfilRow+4, sticky=(W, E), padx=10)
+txtorig_entry.grid(column=0, columnspan=3, row=rfilRow+6, sticky=(W,E), padx=5)
+ttk.Button(resframe, text="Browse", command=get_txtorig).grid( column=3, row=rfilRow+6, sticky=(W, E), padx=10)
+ttk.Button(resframe, text="Show",   command=edit_txtorig).grid(column=4, row=rfilRow+6, sticky=(W, E), padx=10)
 
-ttk.Label(resframe, text="\n*.txt - Your short log of emulated analysis").grid(column=0, columnspan=2, row=rfilRow+5, sticky=(W), padx=5)
+ttk.Label(resframe, text="\n*.txt - Your short log of emulated analysis").grid(column=0, columnspan=2, row=rfilRow+7, sticky=(W), padx=5)
 txtemul = StringVar()
 txtemul_entry = ttk.Entry(resframe, width=130, textvariable=txtemul)              #, justify='right')
-txtemul_entry.grid(column=0, columnspan=3, row=rfilRow+6, sticky=(W,E), padx=5)
-ttk.Button(resframe, text="Browse", command=get_txtemul).grid( column=3, row=rfilRow+6, sticky=(W, E), padx=10)
-ttk.Button(resframe, text="Show",   command=edit_txtemul).grid(column=4, row=rfilRow+6, sticky=(W, E), padx=10)
+txtemul_entry.grid(column=0, columnspan=3, row=rfilRow+8, sticky=(W,E), padx=5)
+ttk.Button(resframe, text="Browse", command=get_txtemul).grid( column=3, row=rfilRow+8, sticky=(W, E), padx=10)
+ttk.Button(resframe, text="Show",   command=edit_txtemul).grid(column=4, row=rfilRow+8, sticky=(W, E), padx=10)
 
-ttk.Label(resframe, text="\n*.pdf etc. - Your graphic file comparing key values of original vs emulation").grid(column=0, columnspan=2, row=rfilRow+7, sticky=(W), padx=5)
+ttk.Label(resframe, text="\n*.pdf etc. - Your graphic file comparing key values of original vs emulation").grid(column=0, columnspan=2, row=rfilRow+9, sticky=(W), padx=5)
 pdffil = StringVar()
 pdffil_entry = ttk.Entry(resframe, width=130, textvariable=pdffil)              #, justify='right')
-pdffil_entry.grid(column=0, columnspan=3, row=rfilRow+8, sticky=(W,E), padx=5)
-ttk.Button(resframe, text="Browse", command=get_pdffil).grid( column=3, row=rfilRow+8, sticky=(W, E), padx=10)
-ttk.Button(resframe, text="Show",   command=edit_pdffil).grid(column=4, row=rfilRow+8, sticky=(W, E), padx=10)
+pdffil_entry.grid(column=0, columnspan=3, row=rfilRow+10, sticky=(W,E), padx=5)
+ttk.Button(resframe, text="Browse", command=get_pdffil).grid( column=3, row=rfilRow+10, sticky=(W, E), padx=10)
+ttk.Button(resframe, text="Show",   command=edit_pdffil).grid(column=4, row=rfilRow+10, sticky=(W, E), padx=10)
 
 
 
@@ -703,6 +730,7 @@ def sub_emul():
             if ftype=='zip' or ftype.find(".")>=0:
                 logfil.set(fn_first+'.'+variant[:-4]+'.log')
                 tabfil.set(fn_first+'.'+variant[:-4]+'.tab')
+                deltafil.set(fn_first+'.'+variant[:-4]+'.delta')
                 txtorig.set(fn_first+'.' + 'orig' +  '.txt')
                 txtemul.set(fn_first+'.'+variant[:-4]+'.txt')
                 pdffil.set(fn_first+'.'+variant[:-4]+'.pdf')
