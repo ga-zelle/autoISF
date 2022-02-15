@@ -304,18 +304,18 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
     
     #// start of mod V14j: calculate acce_ISF from bg acceleration and adapt ISF accordingly
     bg_acce = glucose_status['bg_acceleration']
-    if glucose_status['parabola_fit_a2'] !=0 : 
+    if (glucose_status['parabola_fit_a2'] !=0 ): 
         minmax_delta = - glucose_status['parabola_fit_a1']/2/glucose_status['parabola_fit_a2'] * 5       #// back from 5min block  1 min
         minmax_value = round(glucose_status['parabola_fit_a0'] - minmax_delta*minmax_delta/25*glucose_status['parabola_fit_a2'], 1)
         minmax_delta = round(minmax_delta, 1)
         if (minmax_delta<0 and bg_acce<0) :
-            console_error("Parabolic fit saw maximum of", short(minmax_value), "about", -minmax_delta, "minutes ago")
+            console_error("Parabolic fit saw maximum of", short(minmax_value), "about", short(-minmax_delta), "minutes ago")
         elif (minmax_delta<0 and bg_acce>0) :
-            console_error("Parabolic fit saw minimum of", short(minmax_value), "about", -minmax_delta, "minutes ago")
+            console_error("Parabolic fit saw minimum of", short(minmax_value), "about", short(-minmax_delta), "minutes ago")
         elif (minmax_delta>0 and bg_acce<0) :
-            console_error("Parabolic fit predicts maximum of", short(minmax_value), "in about", minmax_delta, "minutes")
+            console_error("Parabolic fit predicts maximum of", short(minmax_value), "in about", short(minmax_delta), "minutes")
         elif (minmax_delta>0 and bg_acce>0) :
-            console_error("Parabolic fit predicts minimum of", short(minmax_value), "in about", minmax_delta, "minutes")
+            console_error("Parabolic fit predicts minimum of", short(minmax_value), "in about", short(minmax_delta), "minutes")
     fit_corr = glucose_status['parabola_fit_correlation']
     if ( fit_corr<0.9 ) :
         console_error("acce_ISF adaptation by-passed as correlation", round(fit_corr,3), "is too low")
@@ -324,6 +324,7 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         cap_weight = 1                                          #// full contribution above target
         if ( glucose_status['glucose']<profile['target_bg'] and bg_acce>1 ) :
             cap_weight = 0.5                                    #// halve the effect below target
+        acce_weight = 0
         if ( bg_acce < 0 ) :
             acce_weight = profile['bgBrake_ISF_weight']
         else :
@@ -343,20 +344,21 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
     else:
         bg_ISF = 1 + interpolate(100-bg_off, profile)
     console_error("bg_ISF adaptation is", short(round(bg_ISF,2)))
+    Fcasts['BZ_ISF'] = profile['sens']  / bg_ISF
+    if ( bg_ISF<1 and acce_ISF>1 ) :                                                                        #// mod V14j
+        bg_ISF = bg_ISF * acce_ISF                                                                          #// mod V14j: bg_ISF could become > 1 now
+        console_error("bg_ISF adaptation lifted to", round(bg_ISF,2), "as bg accelerates already")          #// mod V14j
     if (bg_ISF<1) :
-        if ( acce_ISF>1 ) :                                                                                 #// mod V14j
-            bg_ISF = bg_ISF * acce_ISF                                                                      #// mod V14j: always less than acce_ISF
-            console_error("bg_ISF adaptation lifted to", round(bg_ISF,2), "as bg accelerates already")      #// mod V14j
-        if ( bg_ISF < profile['autoisf_min'] ) :                                                            #// mod V14j
-            console_error("bg_ISF adaptation", short(round(bg_ISF,2)), "limited by autoisf_min", profile['autoisf_min'])  #// mod V14j
-            bg_ISF = profile['autoisf_min']                                                                 #// mod V14j
-        elif ( bg_ISF > maxISFReduction ) :                                                                 #// mod V14j
-            console.error("bg_ISF adaptation", short(round(bg_ISF,2)), "limited by autoisf_max", maxISFReduction)  #// mod V14j
-            bg_ISF = maxISFReduction                                                                        #// mod V14j
-        Fcasts['BZ_ISF'] = profile['sens']  / bg_ISF
+        liftISF = min(bg_ISF, acce_ISF)
+        if ( liftISF < profile['autoisf_min'] ) :                                                           #// mod V14j
+            console_error("final ISF factor", short(round(liftISF,2)), "limited by autoisf_min", profile['autoisf_min'])  #// mod V14j
+            liftISF = profile['autoisf_min']                                                                #// mod V14j
+        #elif ( liftISF > maxISFReduction ) :                                                               #// mod V14j: not possible here
+        #    console.error("final ISF factor", short(round(liftISF,2)), "limited by autoisf_max", maxISFReduction)  #// mod V14j
+        #    liftISF = maxISFReduction                                                                      #// mod V14j
         Fcasts['Delta_ISF'] = profile['sens']  
-        Fcasts['emulISF'] = sens / bg_ISF
-        return min(720, round(profile['sens'] / bg_ISF, 1))                                                 #// observe ISF maximum
+        Fcasts['emulISF'] = sens / liftISF
+        return min(720, round(profile['sens'] / min(sensitivityRatio, liftISF), 1))                         #// mod V14j: observe ISF maximum of 720(?)
     elif ( bg_ISF > 1 ) :
         sens_modified = True
 

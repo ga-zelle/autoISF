@@ -669,7 +669,7 @@ def TreatLoop(Curly, log, lcount):
         
         #if profile['new_parameter']['bestParabola']:       dura_p, delta_p, parabs, iMax = getBestParabolaBG(len(bg)-1)
         
-        reT = detSMB.determine_basal(glucose_status, currenttemp, iob_data, profile, autosens_data, meal_data, tempBasalFunctionsDummy, True, reservoir, thisTime, Fcasts, Flows, emulAI_ratio)
+        reT = detSMB.determine_basal(glucose_status, currenttemp, iob_data, profile, autosens_data, meal_data, tempBasalFunctionsDummy, MicroBolusAllowed, reservoir, thisTime, Fcasts, Flows, emulAI_ratio)
         newLoop = False
         if len(origAI_ratio)<len(emulAI_ratio):
             origAI_ratio.append(10.0)                    # not found in original console_error
@@ -894,6 +894,13 @@ def get_autosens_data(lcount, st) :                     # key = 86
         autoISF[-1] = (profile['sens'] / autosens_data['ratio'])    # ISF assigned now as autosense is the last data block
     pass
 
+def get_MicroBolusAllowed(lcount, st) :                 # key = 90
+    if not newLoop: return
+    global MicroBolusAllowed
+    #Curly = st[16:]
+    MicroBolusAllowed = (st.find('true') > 16)
+    pass
+
 def ConvertSTRINGooDate(stmp) :
     # stmp is datetime string incl millis, i.e. like "2019-05-22T12:06:48.091Z"
     if   stmp < "2019-10-27T03:00:00.000Z":
@@ -1025,6 +1032,7 @@ def scanLogfile(fn, entries):
                         elif dataTxt      == 'Profile:        {' :          get_profile(lcount, dataStr)
                         elif dataTxt      == 'Meal data:      {' :          get_meal_data(lcount, dataStr)
                         elif dataTxt      == 'Autosens data:  {' :          get_autosens_data(lcount, dataStr)
+                        elif dataTxt      == 'MicroBolusAllowed' :          get_MicroBolusAllowed(lcount, dataStr)
                         elif dataTxt      == 'Result: {"temp":"' :          checkCarbsNeeded(dataStr[8:], lcount)   # result record in AAPS2.6.1
                         #elif dataType == dataType_offset+145:               checkCarbsNeeded(dataStr[8:], lcount)   # result record in AAPS2.7
                         #elif dataType == dataType_offset+147:               checkCarbsNeeded(dataStr[8:], lcount)   # result record in AAPS2.8 Wolfgang Spänle
