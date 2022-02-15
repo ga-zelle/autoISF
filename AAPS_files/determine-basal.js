@@ -239,19 +239,21 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
 
     var bg_ISF = 1 + interpolate(100-bg_off, profile);
     console.error("bg_ISF adaptation is", round(bg_ISF,2));
+    if ( bg_ISF<1 && acce_ISF>1 ) {                                                                             // mod V14j
+        bg_ISF = bg_ISF * acce_ISF;                                                                             // mod V14j:  bg_ISF could become > 1 now
+        console.error("bg_ISF adaptation lifted to", round(bg_ISF,2), "as bg accelerates already");             // mod V14j
+        }                                                                                                       // mod V14j
+    var liftISF = 1;
     if (bg_ISF<1) {
-        if ( acce_ISF>1 ) {                                                                                     // mod V14j
-            bg_ISF = bg_ISF * acce_ISF;                                                                         // mod V14j: always less than acce_ISF
-            console.error("bg_ISF adaptation lifted to", round(bg_ISF,2), "as bg accelerates already");         // mod V14j
+        liftISF = Math.min(bg_isf, acce_ISF);
+        if ( liftISF < profile.autoisf_min ) {                                                                  // mod V14j
+            console.error("final ISF factor", round(liftISF,2), "limited by autoisf_min", profile.autoisf_min); // mod V14j
+            liftISF = profile.autoisf_min;                                                                      // mod V14j
+        //} else if ( bg_ISF > maxISFReduction ) {                                                              // mod V14j: not possible here
+        //    console.error("bg_ISF adaptation", round(bg_ISF,2), "limited by autoisf_max", maxISFReduction);   // mod V14j
+        //    bg_ISF = maxISFReduction;                                                                         // mod V14j
         }                                                                                                       // mod V14j
-        if ( bg_ISF < profile.autoisf_min ) {                                                                   // mod V14j
-            console.error("bg_ISF adaptation", round(bg_ISF,2), "limited by autoisf_min", profile.autoisf_min); // mod V14j
-            bg_ISF = profile.autoisf_min;                                                                       // mod V14j
-        } else if ( bg_ISF > maxISFReduction ) {                                                                // mod V14j
-            console.error("bg_ISF adaptation", round(bg_ISF,2), "limited by autoisf_max", maxISFReduction);     // mod V14j
-            bg_ISF = maxISFReduction;                                                                           // mod V14j
-        }                                                                                                       // mod V14j
-        return Math.min(720, round(profile.sens / bg_ISF, 1));                                                  // observe ISF maximum of 720?; mod V14j
+        return Math.min(720, round(profile.sens / Math.min(sensitivityRatio, liftISF), 1));                     // mod V14j: observe ISF maximum of 720(?)
     } else if ( bg_ISF > 1 ) {
         sens_modified = true;
     }
@@ -299,7 +301,7 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
         console.error("dura_ISF  adaptation is", round(dura_ISF,2), "because ISF", round(sens,1), "did not do it for", round(dura05,1),"m");
     }
     if ( sens_modified ) {
-        var liftISF = Math.max(dura_ISF, bg_ISF, delta_ISF, acce_ISF, pp_ISF);
+        liftISF = Math.max(dura_ISF, bg_ISF, delta_ISF, acce_ISF, pp_ISF);
         if ( acce_ISF < 1 ) {                                                                           // mod V14j: 13.JAN.2022 brakes on for otherwise stronger or stable ISF
             console.error("strongest ISF factor", round(liftISF,2), "weakened to", round(liftISF*acce_ISF,2), "as bg decelerates already");   // mod V14j
             liftISF = liftISF * acce_ISF;                                                               // mod V14j: brakes on for otherwise stronger or stable ISF
@@ -312,9 +314,8 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
             liftISF = maxISFReduction;                                                                          // mod V14j
             //sens = round(profile.sens / Math.max(maxISFReduction, sensitivityRatio, 1);
         }                                                                                                       // mod V14j
-        if ( liftISF >= 1 ) { final_ISF = max(liftISF, sensitivityRatio) }
-        if ( liftISF <  1 ) { final_ISF = min(liftISF, sensitivityRatio) }
-        return round(profile.sens / final_ISF, 1);
+        if ( liftISF >= 1 ) { return round(profile.sens / Math.max(liftISF, sensitivityRatio), 1); }
+        if ( liftISF <  1 ) { return round(profile.sens / Math.min(liftISF, sensitivityRatio), 1); }
     }
     return sens;                                                                                                // mod V14j: nothing changed
 }
