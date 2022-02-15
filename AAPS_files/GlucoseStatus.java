@@ -277,18 +277,20 @@ public class GlucoseStatus {
                 long then_date = then.date;
                 minutesL = (now_date - then_date) / (1000L * 60);
                 // watch out: the scan goes backwards in time, so delta has wrong sign
-                if (minutesL>level && level==7.5) {
+                if (i*sumt2 == sumt*sumt) {
+                    b = 0d;
+                } else {
                     b = (i*sumxy - sumt*sumBG) / (i*sumt2 - sumt*sumt);
+                }
+                if (minutesL>level && level==7.5) {
                     status.slope05 = - b * 5;
                     level = 17.5d;
                 }
                 if (minutesL>level && level == 17.5) {
-                    b = (i*sumxy - sumt*sumBG) / (i*sumt2 - sumt*sumt);
                     status.slope15 = - b * 5;
                     level = 42.5d;
                 }
                 if (minutesL>level && level == 42.5) {
-                    b = (i*sumxy - sumt*sumBG) / (i*sumt2 - sumt*sumt);
                     status.slope40 = - b * 5;
                     break;
                 }
@@ -341,14 +343,17 @@ public class GlucoseStatus {
                 BgReading iframe = data.get(0);
                 long time_0 = iframe.date;
                 double ti_last = 0d;
+                //# for best numerical accurarcy time and bg must be of same order of magnitude
+                double scaleTime = 300d;                  //# in 5m; values are  0, 1, 2, 3, 4, ...
+                double scaleBg   =  50d;                  //# TIR range is now 1.4 - 3.6
 
                 for (int i = 0; i < sizeRecords; i++) {
                     BgReading then = data.get(i);
                     double then_date = then.date;
-                    double ti = (then_date - time_0)/1000d;
-                    if (-ti > 47 * 60) {                        // skip records older than 47.5 minutes
+                    double ti = (then_date - time_0)/1000d/scaleTime;
+                    if (-ti*scaleTime > 47 * 60) {              // skip records older than 47.5 minutes
                         break;
-                    } else if (ti < ti_last - 7.5 * 60) {       // stop scan if a CGM gap > 7.5 minutes is detected
+                    } else if (ti < ti_last-7.5*60/scaleTime) { // stop scan if a CGM gap > 7.5 minutes is detected
                         if ( i<3) {                             // history too short for fit
                             status.dura_p =  -ti_last / 60.0d;
                             status.delta_pl = 0d;
@@ -362,7 +367,7 @@ public class GlucoseStatus {
                         break;
                     }
                     ti_last = ti;
-                    double bg = then.value;
+                    double bg = then.value/scaleBg;
                     sx += ti;
                     sx2 += Math.pow(ti, 2);
                     sx3 += Math.pow(ti, 3);
@@ -383,16 +388,17 @@ public class GlucoseStatus {
                     }
                     if (D != 0.0) {
                         double a = Da / D;
-                        b = Db / D;              // b defined in linear fit !?
+                        b = Db / D;              // b initialised in linear fit !
                         double c = Dc / D;
                         double y_mean = sy / n;
                         double s_squares = 0.0d;
                         double s_residual_squares = 0;
                         for (int j = 0; j <= i; j++) {
                             BgReading before = data.get(j);
-                            s_squares += Math.pow(before.value - y_mean, 2);
-                            double delta_t = (before.date - time_0) / 1000d;
-                            s_residual_squares += Math.pow(before.value - a * Math.pow(delta_t, 2) - b * delta_t - c, 2);
+                            s_squares += Math.pow(before.value/scaleBg - y_mean, 2);
+                            double delta_t  = (before.date - time_0) / 1000d/scaleTime;
+                            double bg_j     = a*Math.pow(delta_t, 2) + b*delta_t + c;
+                            s_residual_squares += Math.pow(before.value/scaleBg - bg_j, 2);
                         }
                         double r_squ = 0.64d;
                         if (s_squares != 0.0) {
@@ -402,17 +408,17 @@ public class GlucoseStatus {
                             if (r_squ > corrMax) {
                                 corrMax = r_squ;
                                 // double delta_t = (then_date - time_0) / 1000;
-                                status.dura_p = -ti / 60.0d;            // remember we are going backwards in time
-                                status.delta_pl = -(a * Math.pow(-5 * 60, 2) - b * 5 * 60);     // 5 minute slope from last fitted bg starting from last bg, i.e. t=0
-                                status.delta_pn =   a * Math.pow( 5 * 60, 2) + b * 5 * 60;      // 5 minute slope to next fitted bg starting from last bg, i.e. t=0
-                                status.bg_acceleration = 2*a*300*300;                           // 2nd derivative of parabola per (5min)^2
-                                status.a_0 = c;
-                                status.a_1 = b*300;
-                                status.a_2 = a*300*300;
+                                status.dura_p = -ti*scaleTime / 60.0d;            // remember we are going backwards in time
+                                status.delta_pl =-scaleBg*(a*Math.pow(-5*60/scaleTime, 2) - b*5*60/scaleTime);     // 5 minute slope from last fitted bg starting from last bg, i.e. t=0
+                                status.delta_pn = scaleBg*(a*Math.pow( 5*60/scaleTime, 2) + b*5*60/scaleTime);     // 5 minute slope to next fitted bg starting from last bg, i.e. t=0
+                                status.bg_acceleration = 2*a*scaleBg;             // 2nd derivative of parabola per (5min)^2
+                                status.a_0 = c*scaleBg;
+                                status.a_1 = b*scaleBg;
+                                status.a_2 = a*scaleBg;
                                 status.r_squ = r_squ;
-                                best_a = a;
-                                best_b = b;
-                                best_c = c;
+                                best_a = a*scaleBg;
+                                best_b = b*scaleBg;
+                                best_c = c*scaleBg;
                             }
                         }
                     }
