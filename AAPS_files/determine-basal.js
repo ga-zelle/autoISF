@@ -245,7 +245,7 @@ function autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTim
         }                                                                                                       // mod V14j
     var liftISF = 1;
     if (bg_ISF<1) {
-        liftISF = Math.min(bg_isf, acce_ISF);
+        liftISF = Math.min(bg_ISF, acce_ISF);
         if ( liftISF < profile.autoisf_min ) {                                                                  // mod V14j
             console.error("final ISF factor", round(liftISF,2), "limited by autoisf_min", profile.autoisf_min); // mod V14j
             liftISF = profile.autoisf_min;                                                                      // mod V14j
