@@ -284,9 +284,9 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
     #Fcasts['origISF'] = profile['sens']                        # taken from original logfile
     #Fcasts['autoISF'] = sens                                   # as modified by autosense; taken from original logfile
     emulAI_ratio.append(10.0)                                   # in case nothing changed
-    Fcasts['BZ_ISF'] = profile['sens'] 
-    Fcasts['Delta_ISF'] = profile['sens']  
-    Fcasts['acceISF'] = profile['sens']  
+    Fcasts['BZ_ISF'] = 1                #profile['sens'] 
+    Fcasts['Delta_ISF'] = 1             #profile['sens']  
+    Fcasts['acceISF'] = 1               #profile['sens']  
     Fcasts['emulISF'] = sens
     #if 'use_autoisf' in profile:                               # version including pp-stuff required
     if not profile['use_autoisf']:
@@ -324,17 +324,17 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         cap_weight = 1                                          #// full contribution above target
         if ( glucose_status['glucose']<profile['target_bg'] and bg_acce>1 ) :
             cap_weight = 0.5                                    #// halve the effect below target
-        acce_weight = 0
+        acce_weight = 1
         if ( bg_acce < 0 ) :
             acce_weight = profile['bgBrake_ISF_weight']
-        else :
+        elif ( bg_acce > 0 ):
             acce_weight = profile['bgAccel_ISF_weight']
         if 'acce_ISF' in new_parameter:
             acce_ISF = new_parameter['acce_ISF']
         else:
             acce_ISF = 1 + bg_acce * cap_weight * acce_weight * fit_share
         console_error("acce_ISF adaptation is", short(round(acce_ISF,2)))
-        Fcasts['acceISF'] = profile['sens'] / acce_ISF
+        Fcasts['acceISF'] = acce_ISF    #profile['sens'] / acce_ISF
         if ( acce_ISF != 1 ) :
             sens_modified = True
     #// end of mod V14j code block
@@ -344,7 +344,7 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
     else:
         bg_ISF = 1 + interpolate(100-bg_off, profile)
     console_error("bg_ISF adaptation is", short(round(bg_ISF,2)))
-    Fcasts['BZ_ISF'] = profile['sens']  / bg_ISF
+    Fcasts['BZ_ISF'] = bg_ISF           #profile['sens']  / bg_ISF
     if ( bg_ISF<1 and acce_ISF>1 ) :                                                                        #// mod V14j
         bg_ISF = bg_ISF * acce_ISF                                                                          #// mod V14j: bg_ISF could become > 1 now
         console_error("bg_ISF adaptation lifted to", round(bg_ISF,2), "as bg accelerates already")          #// mod V14j
@@ -356,7 +356,6 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         #elif ( liftISF > maxISFReduction ) :                                                               #// mod V14j: not possible here
         #    console.error("final ISF factor", short(round(liftISF,2)), "limited by autoisf_max", maxISFReduction)  #// mod V14j
         #    liftISF = maxISFReduction                                                                      #// mod V14j
-        Fcasts['Delta_ISF'] = profile['sens']  
         Fcasts['emulISF'] = sens / liftISF
         return min(720, round(profile['sens'] / min(sensitivityRatio, liftISF), 1))                         #// mod V14j: observe ISF maximum of 720(?)
     elif ( bg_ISF > 1 ) :
@@ -373,6 +372,7 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         else:
             pp_ISF = 1 + max(0, bg_delta * profile['postmeal_ISF_weight'])
         console_error("pp_ISF adaptation is", short(round(pp_ISF,2)))
+        #Fcasts['Delta_ISF'] = pp_ISF    #profile['sens']  
         if (pp_ISF != 1) :
             sens_modified = True
     else :
@@ -385,6 +385,7 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
             delta_ISF = 0.5 * delta_ISF
         delta_ISF = 1 + delta_ISF
         console_error("delta_ISF adaptation is", short(round(delta_ISF,2)))
+        #Fcasts['Delta_ISF'] = delta_ISF #profile['sens']  
         if (delta_ISF != 1) :
             sens_modified = True
 
@@ -406,9 +407,9 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         emulAI_ratio[-1] = min(dura_ISF, maxISFReduction)*10
 
     if ( sens_modified ) :
-        Fcasts['BZ_ISF'] = profile['sens'] / bg_ISF
-        Fcasts['Delta_ISF'] = profile['sens'] / max(delta_ISF, pp_ISF)
-        Fcasts['acceISF'] = profile['sens']  / acce_ISF
+        Fcasts['BZ_ISF'] = bg_ISF                       #profile['sens'] / bg_ISF
+        Fcasts['Delta_ISF'] = max(delta_ISF, pp_ISF)    #profile['sens'] / max(delta_ISF, pp_ISF)
+        Fcasts['acceISF'] = acce_ISF                    #profile['sens'] / acce_ISF
         liftISF = max(dura_ISF, bg_ISF, delta_ISF, acce_ISF, pp_ISF)                                                #// corrected logic on 30.Jan.2022
         if acce_ISF<1 :
             console_error("strongest ISF factor", short(round(liftISF,2)), "weakened to", short(round(liftISF*acce_ISF,2)), "as bg decelerates already")  #// mod V14j: brakes on for otherwise stronger or stable ISF

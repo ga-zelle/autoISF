@@ -171,9 +171,9 @@ if IsAndroid :
     #   the display items dialog
     ###########################################################################
     btns = ["Next", "Exit", "Test"]
-    items = ["bg", "target", "as ratio", "autoISF", "iob", "cob", "range", "bestslope", "ISF", "insReq", "SMB", "basal"]
-    width = [5,     6,          6,        11,        6,      6,      13,      13,        43,      13,      11,     14]
-    pick  = [0,                                              5,               7,          8,       9,      10]
+    items = ["bg", "target", "iob", "cob", "range", "bestslope", "ISF-factors", "ISFs", "insReq", "SMB", "basal"]
+    width = [5,     6,        6,      6,      13,      13,              31,       21,      13,      11          ]
+    pick  = [0,                                                          6,        7,       8,       9          ]
     while True:
         default_pick = pick
         pressed_button, selected_items_indexes = mydialog("Pick outputs", btns, items, True, default_pick)
@@ -189,7 +189,8 @@ if IsAndroid :
             droid.ttsSpeak(str(cols))                                       # tell the sum
 
     arg2 = 'Android'+''.join(['/'+items[i] for i in selected_items_indexes])# the feature list what to plot
-    varyHome= '/storage/emulated/0/qpython/scripts3/'                           # command used to start this script
+    arg2+= '/.'                                                             # always decimal "." on Android
+    varyHome= '/storage/emulated/0/qpython/scripts3/'                       # command used to start this script
     #varyHome = os.path.dirname(varyHome) + '\\'
     m  = '='*66+'\nEcho of software versions used\n'+'-'*66
     m +='\n vary_settings home directory  ' + varyHome
@@ -218,7 +219,8 @@ if IsAndroid :
     pressed_button, selected_items_indexes = mydialog("Pick variant file", btns, lstF, False)
     if pressed_button != 0 or selected_items_indexes == []:
         sys.exit()    
-    varFile = test_dir + ''.join([lstF[i] for i in selected_items_indexes])  
+    varFile = test_dir + ''.join([lstF[i] for i in selected_items_indexes]) 
+    my_decimal = '.'
     
 
     ###########################################################################
@@ -249,19 +251,37 @@ else:                                                                           
     echo_version('determine_basal.py')
     for ele in echo_msg:
         m += '\n dated: '+ele + ',   module name: '+echo_msg[ele]
-    m += '\n' + '='*66 + '\n'
-
-    myseek  = sys.argv[1] #+ '\\'
-    arg2    = 'Windows/' + sys.argv[2]              # the feature list what to plot
-    varFile = sys.argv[3]                           # the variant label
-    if len(sys.argv)>=6:
-        t_stoppLabel = sys.argv[5]                  # last loop time to evaluate
+    m += '\n'+'-'*66+'\nEcho of execution parameters used\n'+'-'*66
+    m += '\nLogfiles to scan      ' + sys.argv[1]
+    m += '\nOutput options        ' + sys.argv[2]
+    m_default = ''
+    if sys.argv[2].find('.') >= 0 :
+        my_decimal = '.'
+    elif sys.argv[2].find(',') >= 0 :
+        my_decimal = ',' 
     else:
-        t_stoppLabel = '2099-00-00T00:00:00Z'       # defaults to end of centuary, i.e. open end
+        my_decimal = ','
+        m_default = ' (default)'                   # the default
+    m += '\nDecimal symbol        ' + my_decimal + m_default
+    myseek  = sys.argv[1] #+ '\\'
+    arg2    = 'Windows/' + sys.argv[2]              # the feature list of what to plot
+    varFile = sys.argv[3]                           # the variant label
     if len(sys.argv)>=5:
-        t_startLabel = sys.argv[4]                  # first loop time to evaluate
+        t_startLabel = sys.argv[4]                  # first loop time to evaluate#
+        m_default = ''
     else:
         t_startLabel = '2000-00-00T00:00:00Z'       # defaults to start of centuary, i.e. open start
+        m_default = ' (default)'
+    m += '\nStart of time window  ' + t_startLabel + m_default
+    if len(sys.argv)>=6:
+        t_stoppLabel = sys.argv[5]                  # last loop time to evaluate
+        m_default = ''
+    else:
+        t_stoppLabel = '2099-00-00T00:00:00Z'       # defaults to end of centuary, i.e. open end
+        m_default = ' (default)'
+    m += '\nEnd of time window    ' + t_stoppLabel + m_default
+    m += '\n' + '='*66 + '\n'
+
 #print ('evaluate from '+t_startLabel+' up to '+t_stoppLabel)
 
 wdhl = 'yes'
@@ -269,7 +289,7 @@ entries = {}
 lastTime = '0'
 while wdhl[0]=='y':                                                                 # use CANCEL to stop/exit
     # All command line arguments known, go for main process
-    thisTime, extraSMB, CarbReqGram, CarbReqTime, lastCOB = parameters_known(myseek, arg2, varFile, t_startLabel, t_stoppLabel, entries, m)
+    thisTime, extraSMB, CarbReqGram, CarbReqTime, lastCOB = parameters_known(myseek, arg2, varFile, t_startLabel, t_stoppLabel, entries, m, my_decimal)
     if thisTime == 'SYNTAX':        break                                           # problem in VDF file
     #print('returned vary_ISF_batch:', CarbReqGram, ' minutes:',  CarbReqTime)
     if IsAndroid:

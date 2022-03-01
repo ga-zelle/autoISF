@@ -672,7 +672,7 @@ def TreatLoop(Curly, log, lcount):
         reT = detSMB.determine_basal(glucose_status, currenttemp, iob_data, profile, autosens_data, meal_data, tempBasalFunctionsDummy, MicroBolusAllowed, reservoir, thisTime, Fcasts, Flows, emulAI_ratio)
         newLoop = False
         if len(origAI_ratio)<len(emulAI_ratio):
-            origAI_ratio.append(10.0)                    # not found in original console_error
+            origAI_ratio.append(10.0)                   # not found in original console_error
         reason = echo_rT(reT)                           # overwrite the original reason
         maxBolStr = getReason(reason, 'maxBolus', '. ', 1)
         if len(maxBolStr) > 5 :
@@ -952,7 +952,7 @@ def scanLogfile(fn, entries):
         dataType_offset = -999                  # AAPS version not yet known
         AAPS_Version = '<2.7'
         #fn_base=      fn + '.' + varLabel
-        xyf     = open(fn_first + '.' + varLabel + '.tab', 'w')
+        xyf     = open(fn_first + '.' + varLabel + '.csv', 'w')
         log     = open(fn_first + '.orig.txt', 'w')
         varlog  = open(fn_first + '.' + varLabel + '.log', 'w')
         varlog.write(echo_msg)
@@ -1448,7 +1448,7 @@ def XYplots(loopCount, head1, head2, entries) :
 
     with PdfPages(pdfFile) as pdf:
         for iFrame in range(0, maxframes):                                              # the loop instances
-            log_msg(entries[loop_mills[iFrame]])                                        # print short table as heart beat
+            log_msg(entries[loop_mills[iFrame]].replace('.', my_decimal))                      # print short table as heart beat
             #fig, axes = plt.subplots(1, maxPlots, constrained_layout=True, figsize=(9, 15)) #6*maxPlots)  )          
             fig = plt.figure(constrained_layout=True, figsize=(2.2*max(6,maxPlots), 11))# w, h paper size in inches; double width if no flowchart
             #fig = plt.figure(constrained_layout=False, figsize=(2.2*max(6,maxPlots), 11))# w, h paper size in inches; double width if no flowchart
@@ -1789,19 +1789,19 @@ def XYplots(loopCount, head1, head2, entries) :
             pdf.savefig()
             if not featured('pred'):                        # only 1 frame
                 for i in range(iFrame+1,  len(entries)):
-                    log_msg(entries[loop_mills[i]])
+                    log_msg(entries[loop_mills[i]].replace('.', my_decimal))
                 if how_to_print != 'GUI':    plt.show()     # otherwise conflict with root.mainloop() in tkinter
             plt.close()                                     # end of current page
         #pdf.close()                                        # not needed due to "with ..." method triggered above
     pass
 
-def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries, msg):    
+def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries, msg, my_dec):    
     #log_msg('entered parameters_known mit\nmyseek='+myseek+'\narg2='+arg2+'\nvariantFile='+variantFile+'\nstartLabel='+startLabel+'\nstoppLabel='+stoppLabel)
     #   start of top level analysis
     
     global  fn
     global  ce_file
-    global  varLabel, echo_msg
+    global  varLabel, echo_msg, my_decimal
     global  doit
     global  fn_first
 
@@ -1880,6 +1880,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
     filecount   = 0
     newLoop     = False
         
+    my_decimal = my_dec
     echo_msg = msg    
     myfile = ''
     arg2 = arg2.replace('_', ' ')                   # get rid of the UNDERSCOREs
@@ -1974,10 +1975,11 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                     r_list += f'{round(origiob[iFrame]/10,2):>6}'   # was scaled up for plotting
                 if featured('cob'):     
                     r_list += f'{round(origcob[iFrame],2):>6}'
-                if featured('as ratio'):
-                    r_list += f'{round(origAs_ratio[iFrame]/10,2):>6}'     # was scaled up for plotting
-                if featured('autoISF'):
-                    r_list += f'{round(origAI_ratio[iFrame]/10,2):>6} {round(emulAI_ratio[iFrame]/10,2):>4}'     # was scaled up for plotting
+                #if featured('as ratio'):
+                #    r_list += f'{round(origAs_ratio[iFrame]/10,2):>6}'     # was scaled up for plotting
+                #if featured('autoISF'):
+                #    #_list += f'{round(origAI_ratio[iFrame]/10,2):>6} {round(emulAI_ratio[iFrame]/10,2):>4}'     # was scaled up for plotting
+                #    r_list += f'{round(emulAI_ratio[iFrame]/10,2):>4}'     # was scaled up for plotting
                 if featured('range'):
                     r_list += f'{longDelta[iFrame]:>6}{avgDelta[iFrame]:>7}'
                 if featured('fitsslope') or featured('bestslope'):
@@ -1993,8 +1995,10 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                                 this_List = f'{thisDelta["parabola_fit_minutes"]:>7}{round(thisDelta["parabola_fit_last_delta"],2):>8}'
                                 this_List+= f'{round(thisDelta["parabola_fit_next_delta"],2):>8}'
                     r_list += this_List
-                if featured('ISF'):
-                    r_list += f' {round(origISF[iFrame],1):>6}{round(profISF[iFrame],1):>6}{round(autoISF[iFrame],1):>6}{round(BZ_ISF[iFrame],1):>6}{round(Delta_ISF[iFrame],1):>6}{round(acceISF[iFrame],1):>6}{round(emulISF[iFrame],1):>6}'
+                if featured('ISF') or featured('ISF-factors'): 
+                    r_list += f'{round(emulAs_ratio[iFrame]/10,2):>7}{round(acceISF[iFrame],2):>6}{round(BZ_ISF[iFrame],2):>6}{round(Delta_ISF[iFrame],2):>6}{round(emulAI_ratio[iFrame]/10,2):>6}'
+                if featured('ISF') or featured('ISFs'):         # 21
+                    r_list += f'{round(origISF[iFrame],1):>9}{round(profISF[iFrame],1):>6}{round(emulISF[iFrame],1):>6}'
                 if featured('insReq'):
                     r_list += f'{origInsReq[iFrame]:>7}{emulInsReq[iFrame]:>6}'
                 if featured('SMB'):
@@ -2004,10 +2008,27 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                 entries[thisTime] = r_list
                     
         # ---   print the comparisons    -------------------------
-        head= "    ----time formated as---       -----target-----                     -Autosens-  -autoISF-   --5% range--    --lin.fit--    -----orig parabola fit-----    ------------------ISFs------------------    insulin Req   -maxBolus-   ---SMB---   ---tmpBasal---\n" \
-            + " id    UTC         UNIX       bg    orig     emul    cob   iob    act  orig  emul  orig emul   dura    avg     dura    avg     corr  dura  last-Δ  next-Δ    orig  prof  auto  high  rise  acce  emul    orig   emul    orig emul   orig emul     orig    emul"
+        head1  = "  ;     ;     ;   ; target; target; target; target;    ;    ; "
+        head2  = "  ;  UTC; UNIX;   ;   low ;  high ;  low  ;  high ;    ;    ; "
+        head3  = "id; time; time; bg;  orig ;  orig ;  emul ;  emul ; cob; iob; act"
+        
+        head1 += "; auto; dura; aisf ;     ; lin.fit; "
+        head2 += "; sens;  ISF; dura-; aisf;  dura- ; lin.fit"
+        head3 += "; orig; orig; tion ; avg.;  tion  ; delta"
+        
+        head1 += ";  parab; parab;  parab; parab"
+        head2 += ";   fit ;  fit ;  fit ;   fit"
+        head3 += "; correl; durat; last-Δ; next-Δ"
+
+        head1 += "; auto; acce;  bg ; delta; dura;     ;     ; "
+        head2 += "; sens ; ISF;  ISF;  ISF ;  ISF;  ISF;  ISF; ISF"
+        head3 += "; emul; emul; emul; emul ; emul; orig; prof; emul"
+
+        head1 += "; Ins.; Ins.; max ; max ;     ;     ;     ; "
+        head2 += "; Req.; Req.;bolus;bolus; SMB ; SMB ; TBR ; TBR"
+        head3 += "; orig; emul; orig; emul; orig; emul; orig; emul"
         #print('\n' + head)
-        xyf.write(head + '\n')
+        xyf.write(head1+'\n' + head2+'\n' + head3+'\n')
         
         origBasalint = 0.0
         emulBasalint = 0.0
@@ -2043,27 +2064,31 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         max_emulSMB= 0.0
         
         for i in range(loopCount) :
-            tabz = f'{i:>3} {loop_label[i]} {loop_mills[i]:>13} {bg[i]:>4} ' 
-            tabz += f'{origTarLow[i]:>4}-{origTarHig[i]:>3} {emulTarLow[i]:>4}-{emulTarHig[i]:>3} ' 
-            tabz += f'{origcob[i]:>5} {round(origiob[i]/10,2):>5} {round(activity[i]/1000,3):>6} ' 
-            tabz += f'{round(origAs_ratio[i]/10,2):>5} {round(emulAs_ratio[i]/10,2):>5}' 
-            tabz += f'{round(origAI_ratio[i]/10,2):>6} {round(emulAI_ratio[i]/10,2):>4}' 
-            tabz += f'{longDelta[i]:>7} {avgDelta[i]:>7}' 
-            tabz += f'{longSlope[i]:>8} {rateSlope[i]:>6}' 
+            tabz = f'{i:>3}; {loop_label[i]}; {loop_mills[i]:>13}; {bg[i]:>4}; ' 
+            tabz += f'{origTarLow[i]:>4};-{origTarHig[i]:>3}; {emulTarLow[i]:>4};-{emulTarHig[i]:>3}; ' 
+            tabz += f'{origcob[i]:>5}; {round(origiob[i]/10,2):>5}; {round(activity[i]/1000,3):>6}; ' 
+            tabz += f'{round(origAs_ratio[i]/10,2):>5};'                # {round(emulAs_ratio[i]/10,2):>5};' 
+            tabz += f'{round(origAI_ratio[i]/10,2):>6}; ' 
+            tabz += f'{longDelta[i]:>7}; {avgDelta[i]:>7};' 
+            tabz += f'{longSlope[i]:>8}; {rateSlope[i]:>6};' 
             this_List = 31*' '
             thisTime = loop_mills[i]
+            skip_parab = True
             if thisTime in bgTimeMap:
                 deltaTime = bgTimeMap[thisTime]
                 if deltaTime in deltas:
                     thisDelta = deltas[deltaTime]
                     if 'parabola_fit_minutes' in thisDelta:
-                        this_List = f'{round(thisDelta["parabola_fit_correlation"],4):>9}{round(thisDelta["parabola_fit_minutes"],1):>6}'
-                        this_List+= f'{round(thisDelta["parabola_fit_last_delta"],2):>8}{round(thisDelta["parabola_fit_next_delta"],2):>8}'
+                        this_List = f'{round(thisDelta["parabola_fit_correlation"],4):>9};{round(thisDelta["parabola_fit_minutes"],1):>6};'
+                        this_List+= f'{round(thisDelta["parabola_fit_last_delta"],2):>8};{round(thisDelta["parabola_fit_next_delta"],2):>8};'
+                        skip_parab = False
+            if skip_parab: this_List = '; ; ; ;'
             tabz += this_List
-            tabz += f'{round(origISF[i],1):>8}{round(profISF[i],1):>6}{round(autoISF[i],1):>6}{round(BZ_ISF[i],1):>6}{round(Delta_ISF[i],1):>6}{round(acceISF[i],1):>6}{round(emulISF[i],1):>6}' 
-            tabz += f'{origInsReq[i]:>8} {emulInsReq[i]:>6} ' 
-            tabz += f'{origMaxBolus[i]:>7} {emulMaxBolus[i]:>4} {origSMB[i]:>6} {emulSMB[i]:>4} ' 
-            tabz += f'{origBasal[i]:>9} {emulBasal[i]:>6}'
+            tabz += f'{round(emulAs_ratio[i]/10,2):>5};{round(acceISF[i],2):>6};{round(BZ_ISF[i],2):>6};{round(Delta_ISF[i],2):>6};{round(emulAI_ratio[i]/10,2):>4};'
+            tabz += f'{round(origISF[i],1):>8};{round(profISF[i],1):>6};{round(emulISF[i],1):>6};' 
+            tabz += f'{origInsReq[i]:>8}; {emulInsReq[i]:>6}; ' 
+            tabz += f'{origMaxBolus[i]:>7}; {emulMaxBolus[i]:>4}; {origSMB[i]:>6}; {emulSMB[i]:>4}; ' 
+            tabz += f'{origBasal[i]:>9}; {emulBasal[i]:>6}'
             #print(tabz)
             origSMBsum += origSMB[i]
             emulSMBsum += emulSMB[i]
@@ -2102,25 +2127,27 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
             if max_origSMB<origSMB[i]:          max_origSMB = origSMB[i]
             if min_emulSMB>emulSMB[i]:          min_emulSMB = emulSMB[i]
             if max_emulSMB<emulSMB[i]:          max_emulSMB = emulSMB[i]
-            xyf.write(tabz + '\n')
+            xyf.write(tabz.replace('.', my_decimal) + '\n')
         
         sepLine = ''
         sepLine += 254 * '-'
         sepLine += '\n'
-        tabz = 'Minimum:'+ f'{min_bg:>24}' \
-             + f'{round(min_origAS/10,2):>43} {round(min_emulAS/10,2):>5}' \
-             + f'{round(min_origAI/10,2):>5} {round(min_emulAI/10,2):>5}' \
-             + f'{round(min_origISF,1):>69}{round(min_profISF,1):>6}{round(min_autoISF,1):>6}{round(min_BZ_ISF,1):>6}{round(min_Delta_ISF,1):>6}{round(min_acceISF,1):>6}{round(min_emulISF,1):>6}' \
-             + f'{round(min_origSMB,1):>35} {round(min_emulSMB,1):>4}'
-        xyf.write(sepLine + tabz + '\n')
-        tabz = 'Maximum:'+ f'{max_bg:>24}' \
-             + f'{round(max_origAS/10,2):>43} {round(max_emulAS/10,2):>5}' \
-             + f'{round(max_origAI/10,2):>5} {round(max_emulAI/10,2):>5}' \
-             + f'{round(max_origISF,1):>69}{round(max_profISF,1):>6}{round(max_autoISF,1):>6}{round(max_BZ_ISF,1):>6}{round(max_Delta_ISF,1):>6}{round(max_acceISF,1):>6}{round(max_emulISF,1):>6}' \
-             + f'{round(max_origSMB,1):>35} {round(max_emulSMB,1):>4}'
-        xyf.write(tabz + '\n')
-        tabz = 'Totals:'+ f'{round(origSMBsum,1):>225} {round(emulSMBsum,1):>4} {round(origBasalint,2):>9} {round(emulBasalint,2):>6}'
-        xyf.write(sepLine + tabz + '\n' + sepLine)
+        tabz = 'Minimum:;;; '+ f'{min_bg:>24}' \
+             + f';;;;;;;;{round(min_origAS/10,2):>43}; {round(min_origAI/10,2):>5}' \
+             + f';;;;;;;;;{round(min_emulAS/10,2):>5}' \
+             + f';{round(min_acceISF,2):>6};{round(min_BZ_ISF,2):>6};{round(min_Delta_ISF,2):>6};{round(min_emulAI/10,2):>5}' \
+             + f';{round(min_origISF,1):>69};{round(min_profISF,1):>6};{round(min_emulISF,1):>6}' \
+             + f';;;;;{round(min_origSMB,1):>35}; {round(min_emulSMB,1):>4}'
+        xyf.write(tabz.replace('.', my_decimal) + '\n')
+        tabz = 'Maximum:;;; '+ f'{max_bg:>24}' \
+             + f';;;;;;;;{round(max_origAS/10,2):>43}; {round(max_origAI/10,2):>5}' \
+             + f';;;;;;;;;{round(max_emulAS/10,2):>5}' \
+             + f';{round(max_acceISF,2):>6};{round(max_BZ_ISF,2):>6};{round(max_Delta_ISF,2):>6};{round(max_emulAI/10,2):>5}' \
+             + f';{round(max_origISF,1):>69};{round(max_profISF,1):>6};{round(max_emulISF,1):>6}' \
+             + f';;;;;{round(max_origSMB,1):>35}; {round(max_emulSMB,1):>4}'
+        xyf.write(tabz.replace('.', my_decimal) + '\n')
+        tabz = 'Totals:'+ ';'*33+f'{round(origSMBsum,1):>225}; {round(emulSMBsum,1):>4}; {round(origBasalint,2):>9}; {round(emulBasalint,2):>6}'
+        xyf.write(tabz.replace('.', my_decimal) + '\n')
 
         # ---   list all types of delta information    -----------
         #pro = os.system("SET PYTHONUTF8=1")
@@ -2144,7 +2171,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
             dura_p, delta_p, parabs, iMax = getBestParabolaBG(i)
             ll += f'{round(dura_p,1):>8}{round(delta_p,2):>7}'
             if iMax >=0:    ll += '  '+str(parabs[iMax]) 
-            delta.write(ll + '\n')
+            delta.write(ll.replace('.', my_decimal) + '\n')
             i += 1
             if i >= len(loop_label):        break
         delta.close()
@@ -2169,12 +2196,12 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         if featured('cob'):                             #  6 
             head1 += '      '
             head2 += '   COB'
-        if featured('as ratio'):                        #  6
-            head1 += '  Auto'
-            head2 += '  sens'
-        if featured('autoISF'):                         # 11
-            head1 += '  -AutoISF-'
-            head2 += '  orig emul'
+        #if featured('as ratio'):                        #  6
+        #    head1 += '  Auto'
+        #    head2 += '  sens'
+        #if featured('autoISF'):                         # 11
+        #    head1 += '  -AutoISF-'
+        #    head2 += '  orig emul'
         if featured('range'):                           # 13
             head1 += '  --5% range-'
             head2 += '  dura   avg.'
@@ -2184,9 +2211,12 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         if featured('fitsParabola') or featured('bestParabola'):                     # 21
             head1 += '   ----parabola fit----'
             head2 += '   dura  last-Δ  next-Δ'
-        if featured('ISF'):                             # 43; was 24 and 36
-            head1 += '   ------------------ISFs------------------'
-            head2 += '   orig  prof  auto  high  rise  acce  emul'
+        if featured('ISF') or featured('ISF-factors'):  # 31
+            head1 += '   ---------ISF factors--------'
+            head2 += '   auto  acce   bg   rise  dura'
+        if featured('ISF') or featured('ISFs'):         # 21
+            head1 += '     ------ISFs------' 
+            head2 += '     orig  prof  emul'
         if featured('insReq'):                          # 13
             head1 += '  insulin Req'
             head2 += '   orig  emul'
@@ -2212,7 +2242,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         log_msg(head2+tail)                                             # 1 record per print for safe rotations
         for thisTime in sorted_entries[len(sorted_entries)-top10:]:     # last hour plus
             values = entries[thisTime]
-            log_msg(values+tail)
+            log_msg(values.replace('.', my_decimal)+tail)
 
     # erase outdated entries; the remainder is kept in case a new logfile is started
     old_entries = copy.deepcopy(sorted_entries)

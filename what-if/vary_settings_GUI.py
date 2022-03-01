@@ -308,7 +308,7 @@ def act(using, thisOpt):
     pass
     
 def radioAll():
-    optHeader.set("\n")                
+    optHeader.set("\n                                                                                       ")                
     raw.set('All')
     doit.delete('1.0', 'end')
     doit.insert('end', 'All')
@@ -316,6 +316,7 @@ def radioAll():
     glucframe.grid_remove()
     isf_frame.grid_remove()
     insuframe.grid_remove()
+    noframe.grid()
     clearchecks()
     
 def radioMost():
@@ -327,6 +328,7 @@ def radioMost():
     glucframe.grid()
     isf_frame.grid()
     flowframe.grid()
+    noframe.grid_remove()
     doit.insert('end', 'All/-pred/-flowchart')
     optionLabels('Hide')
 
@@ -339,7 +341,14 @@ def radioSome():
     glucframe.grid()
     isf_frame.grid()
     flowframe.grid()
+    noframe.grid_remove()
     optionLabels('Show')
+
+def radioComma():
+    decim.set(',')
+    
+def radioPeriod():
+    decim.set('.')
 
 outframe.columnconfigure(1, weight=1)
 outframe.columnconfigure(2, weight=1)
@@ -349,15 +358,17 @@ doit = Text(outframe, state='normal', width=76, height=1)                       
 doit.grid(column=1, row=1, columnspan=3, padx=5, sticky='w')
 
 optHeader = StringVar()
-ttk.Label(outframe, textvariable=optHeader).grid(column=1, row=19, columnspan=3, padx=5, sticky=(W))
+ttk.Label(outframe, textvariable=optHeader).grid(column=2, row=19, columnspan=3, padx=5, sticky=(W))
 insuframe = ttk.Labelframe(outframe, width=250, height=400, text='Insulin chart content')
-insuframe.grid(row= 20, column=1, padx=20, pady=5, sticky=(W,N))
+insuframe.grid(row= 20, column=2, padx=20, pady=5, sticky=(W,N))
 glucframe = ttk.Labelframe(outframe, width=250, height=400, text='Glucose chart content          ') # same width as autoISF frame
-glucframe.grid(row= 20, column=2, padx=20, pady=5, sticky=(W,N))
+glucframe.grid(row= 20, column=3, padx=20, pady=5, sticky=(W,N))
 isf_frame = ttk.Labelframe(outframe, width=250, height=400, text='specials, e.g. autoISF')
-isf_frame.grid(row= 30, column=2, padx=20, pady=5, sticky=(W,N))
+isf_frame.grid(row= 30, column=3, padx=20, pady=5, sticky=(W,N))
 flowframe = ttk.Labelframe(outframe, width=250, height=400, text='Flowchart ON/OFF')
-flowframe.grid(row= 20, column=3, padx=20, pady=5, sticky=(W,N))
+flowframe.grid(row= 20, column=4, padx=20, pady=5, sticky=(W,N))
+noframe = ttk.Labelframe(outframe, width=510, height=100, text='')
+noframe.grid(row=20, column=2, columnspan=3, padx=20, pady=5, sticky=(W,N))
 
 #   insulin chart options     --------------------------------------------------
 def useinsReqChanged():     act(useinsReq.get(), "insReq")
@@ -477,17 +488,25 @@ chkflow = ttk.Checkbutton(flowframe, text='Create flowchart', \
             command=useflowChanged, variable=useflow, onvalue='on', offvalue='off')
 chkflow.grid(column=0, row=1, columnspan=2, sticky=(W), padx=5)
 
+#   this selects the decimal symbol
+ttk.Label(outframe, text="\nSelect the decimal symbol for output tables").grid(column=1, row=2, columnspan=1, padx=5, sticky=(W))
+decim = StringVar()
+comma = ttk.Radiobutton(outframe, variable=decim, value=',', command=radioComma,  text='use ","')
+period= ttk.Radiobutton(outframe, variable=decim, value='.', command=radioPeriod, text='use "."')
+radioComma()                                                                     # initial default
+comma.grid(column=1,  row=11, padx=20, sticky=W)
+period.grid(column=1, row=12, padx=20, sticky=W)
+
 #   this is placed last because their commands refer to above defs
-ttk.Label(outframe, text="\nCoarse grained selection of graphics output").grid(column=1, row=2, columnspan=3, padx=5, sticky=(W))
+ttk.Label(outframe, text="\nCoarse grained selection of graphics output").grid(column=2, row=2, columnspan=3, padx=5, sticky=(W))
 raw  = StringVar()
 some = ttk.Radiobutton(outframe, variable=raw, value='some', command=radioSome, text='just a few')
 most = ttk.Radiobutton(outframe, variable=raw, value='most', command=radioMost, text='most (i.e.  All but a few)')
 all  = ttk.Radiobutton(outframe, variable=raw, value='All',  command=radioAll,  text='All')
 radioMost()                                                                     # initial default
-some.grid(column=1, row=11, padx=20, sticky=W)
-most.grid(column=1, row=12, padx=20, sticky=W)
-all.grid( column=1, row=13, padx=20, sticky=W)
-
+some.grid(column=2, row=11, columnspan=3, padx=20, sticky=W)
+most.grid(column=2, row=12, columnspan=3, padx=20, sticky=W)
+all.grid( column=2, row=13, columnspan=3, padx=20, sticky=W)
 
 
 #################################################################################
@@ -511,7 +530,7 @@ def get_deltafil():
 
 def get_tabfil():
     oldaf = tabfil.get()
-    loglist = {'logfile {.tab}'}  
+    loglist = {'table {.csv .tab}'}  
     newaf = filedialog.askopenfilename(filetypes=loglist, initialdir=wdir.get(), initialfile=oldaf)
     if newaf != "":
         tabfil.set(newaf)
@@ -621,7 +640,7 @@ logfil_entry.grid(column=0, columnspan=3, row=rfilRow, sticky=(W,E), padx=5)
 ttk.Button(resframe, text="Browse", command=get_logfil).grid( column=3, row=rfilRow, sticky=(W, E), padx=10)
 ttk.Button(resframe, text="Show",   command=edit_logfil).grid(column=4, row=rfilRow, sticky=(W, E), padx=10)
 
-ttk.Label(resframe, text="\n*.tab - Your table comparing key values of original vs emulation").grid(column=0, columnspan=2, row=rfilRow+1, sticky=(W), padx=5)
+ttk.Label(resframe, text="\n*.csv - Your table comparing key values of original vs emulation").grid(column=0, columnspan=2, row=rfilRow+1, sticky=(W), padx=5)
 tabfil = StringVar()
 tabfil_entry = ttk.Entry(resframe, width=130, textvariable=tabfil)              #, justify='right')
 tabfil_entry.grid(column=0, columnspan=3, row=rfilRow+2, sticky=(W,E), padx=5)
@@ -667,9 +686,36 @@ def clear_msg():
     lfd.delete(1.0, 'end')
     lfd['state'] = 'disabled'
     
+def echo_version(mdl):
+    global echo_msg
+    #mdl= 'vary_settings_batch.py'
+    stamp = os.stat(varyHome + mdl)
+    stposx= datetime.fromtimestamp(stamp.st_mtime)
+    ststr = datetime.strftime(stposx, "%Y-%m-%d %H:%M:%S")
+    echo_msg[ststr] = mdl
+    return 
+
 def sub_emul():
-    global runState 
+    global runState, varyHome
     runState.set('Checking inputs ...   ')
+    varyHome= sys.argv[0]                           # command used to start this script
+    whereColon = varyHome.find(':')
+    if whereColon < 0:
+        varyHome = os.getcwd()
+    varyHome = os.path.dirname(varyHome) + '\\'
+    m  = '='*66+'\nEcho of software versions used\n'+'-'*66
+    m +='\n vary_settings home directory  ' + varyHome
+    global echo_msg
+    echo_msg = {}
+    echo_version('vary_settings_GUI.py')
+    echo_version('vary_settings_core.py')
+    echo_version('determine_basal.py')
+    for ele in echo_msg:
+        m += '\n dated: '+ele + ',   module name: '+echo_msg[ele]
+    #m += '\n' + '='*66 + '\n'
+    m += '\n'+'-'*66+'\nEcho of execution parameters used\n'+'-'*66
+    m += '\nLogfile(s) to scan    ' + afil.get()
+
     ttk.Label(runframe, textvariable=runState, style='TLabel').grid(column=2, row=runRow, sticky=(W), padx=20, pady=10)
     incomplete = False                                                          # update frame display
     variant = os.path.basename(vfil.get())
@@ -680,24 +726,42 @@ def sub_emul():
     if gopt == '':
         sub_issue('graphics output options are missing')
         incomplete = True
+    m += '\nOutput options        ' + gopt
     gopt = 'Windows/' + gopt                                                    # i.e. not in Android
+    #m_default = ''
+    #if gopt.find('.') >= 0 :
+    #    my_decimal = '.'
+    #elif gopt.find(',') >= 0 :
+    #    my_decimal = ',' 
+    #else:
+    #    my_decimal = ','
+    #    m_default = ' (default)'                   # the default
+    my_decimal = decim.get()
+    m += '\nDecimal symbol        ' + my_decimal
     if afil.get() == '':
         sub_issue('AndroidAPS logfile is missing')
         incomplete = True
     if stmpStart.get() == 'no':
         useStart = noStart
+        m_default = ' (default)'
     else:
         useStart = tstart.get()
         if useStart == '':
             sub_issue('start time ticked but missing')
             incomplete = True
+        m_default = ''
+    m += '\nStart of time window  ' + useStart + m_default
     if stmpStopp.get() == 'no':
         useStopp = noStopp
+        m_default = ' (default)'
     else:
         useStopp = tstopp.get()
         if useStopp == '':
             sub_issue('stop time ticked but missing')
             incomplete = True
+        m_default = ''
+    m += '\nEnd of time window    ' + useStopp + m_default
+    m += '\n' + '='*66 + '\n'
     if incomplete:
         runState.set(notRunning)
         lfd['state'] = 'disabled'
@@ -708,7 +772,7 @@ def sub_emul():
         runframe.update()                                                       # update frame display
         #kick_off(afil.get(), gopt, variant, useStart, useStopp)
         entries = {}
-        thisTime, extraSMB, CarbReqGram, CarbReqTime, lastCOB = parameters_known(afil.get(), gopt, vfil.get(), useStart, useStopp, entries, m)
+        thisTime, extraSMB, CarbReqGram, CarbReqTime, lastCOB = parameters_known(afil.get(), gopt, vfil.get(), useStart, useStopp, entries, m, my_decimal)
         if thisTime == 'SYNTAX':
             runState.set('Emulation halted ... ')
             ttk.Label(runframe, textvariable=runState, style='Error.TLabel').grid(column=2, row=runRow, sticky=(W), padx=20, pady=10)
@@ -729,7 +793,7 @@ def sub_emul():
             varLabel = variant[:-4]
             if ftype=='zip' or ftype.find(".")>=0:
                 logfil.set(fn_first+'.'+variant[:-4]+'.log')
-                tabfil.set(fn_first+'.'+variant[:-4]+'.tab')
+                tabfil.set(fn_first+'.'+variant[:-4]+'.csv')
                 deltafil.set(fn_first+'.'+variant[:-4]+'.delta')
                 txtorig.set(fn_first+'.' + 'orig' +  '.txt')
                 txtemul.set(fn_first+'.'+variant[:-4]+'.txt')
@@ -751,32 +815,6 @@ def sub_emul():
     runframe.update()                                                           # update frame display
     #log_msg("End of sub_emul reached")
     pass
-
-def echo_version(mdl):
-    global echo_msg
-    #mdl= 'vary_settings_batch.py'
-    stamp = os.stat(varyHome + mdl)
-    stposx= datetime.fromtimestamp(stamp.st_mtime)
-    ststr = datetime.strftime(stposx, "%Y-%m-%d %H:%M:%S")
-    echo_msg[ststr] = mdl
-    return 
-
-varyHome= sys.argv[0]                           # command used to start this script
-whereColon = varyHome.find(':')
-if whereColon < 0:
-    varyHome = os.getcwd()
-varyHome = os.path.dirname(varyHome) + '\\'
-m  = '='*66+'\nEcho of software versions used\n'+'-'*66
-m +='\n vary_settings home directory  ' + varyHome
-global echo_msg
-echo_msg = {}
-echo_version('vary_settings_GUI.py')
-echo_version('vary_settings_core.py')
-echo_version('determine_basal.py')
-for ele in echo_msg:
-    m += '\n dated: '+ele + ',   module name: '+echo_msg[ele]
-m += '\n' + '='*66 + '\n'
-
 
 runRow = 1
 runframe.columnconfigure(0, weight=1)
