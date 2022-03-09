@@ -583,7 +583,7 @@ def edit_deltafil():
 def edit_tabfil():
     oldvf = tabfil.get()
     try:
-        os.startfile(oldvf)                                                     # requires DOS knows to edit ".log" files
+        os.startfile(oldvf)                                                     # requires DOS knows to edit ".csv" files
     except:                                                                     # catch *all* exceptions
         book.select(4)                                                          # activate result tab
         tb = sys.exc_info()[2]

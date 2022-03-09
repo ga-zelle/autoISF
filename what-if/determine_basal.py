@@ -303,40 +303,45 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
     bg_off = target_bg+10 - avg05                               # move from central BG=100 to target+10 as virtual BG'=100
     
     #// start of mod V14j: calculate acce_ISF from bg acceleration and adapt ISF accordingly
-    bg_acce = glucose_status['bg_acceleration']
-    if (glucose_status['parabola_fit_a2'] !=0 ): 
-        minmax_delta = - glucose_status['parabola_fit_a1']/2/glucose_status['parabola_fit_a2'] * 5       #// back from 5min block  1 min
-        minmax_value = round(glucose_status['parabola_fit_a0'] - minmax_delta*minmax_delta/25*glucose_status['parabola_fit_a2'], 1)
-        minmax_delta = round(minmax_delta, 1)
-        if (minmax_delta<0 and bg_acce<0) :
-            console_error("Parabolic fit saw maximum of", short(minmax_value), "about", short(-minmax_delta), "minutes ago")
-        elif (minmax_delta<0 and bg_acce>0) :
-            console_error("Parabolic fit saw minimum of", short(minmax_value), "about", short(-minmax_delta), "minutes ago")
-        elif (minmax_delta>0 and bg_acce<0) :
-            console_error("Parabolic fit predicts maximum of", short(minmax_value), "in about", short(minmax_delta), "minutes")
-        elif (minmax_delta>0 and bg_acce>0) :
-            console_error("Parabolic fit predicts minimum of", short(minmax_value), "in about", short(minmax_delta), "minutes")
-    fit_corr = glucose_status['parabola_fit_correlation']
-    if ( fit_corr<0.9 ) :
-        console_error("acce_ISF adaptation by-passed as correlation", round(fit_corr,3), "is too low")
-    else :
-        fit_share = 10*(fit_corr-0.9)                           #// 0 at correlation 0.9, 1 at 1.00
-        cap_weight = 1                                          #// full contribution above target
-        if ( glucose_status['glucose']<profile['target_bg'] and bg_acce>1 ) :
-            cap_weight = 0.5                                    #// halve the effect below target
-        acce_weight = 1
-        if ( bg_acce < 0 ) :
-            acce_weight = profile['bgBrake_ISF_weight']
-        elif ( bg_acce > 0 ):
-            acce_weight = profile['bgAccel_ISF_weight']
-        if 'acce_ISF' in new_parameter:
-            acce_ISF = new_parameter['acce_ISF']
-        else:
-            acce_ISF = 1 + bg_acce * cap_weight * acce_weight * fit_share
-        console_error("acce_ISF adaptation is", short(round(acce_ISF,2)))
-        Fcasts['acceISF'] = acce_ISF    #profile['sens'] / acce_ISF
-        if ( acce_ISF != 1 ) :
-            sens_modified = True
+    if 'parabola_fit_correlation' not in glucose_status:
+       console_error("acce_ISF adaptation not active in this version")
+    else:
+        
+        fit_corr = glucose_status['parabola_fit_correlation']
+        corr_Min = 0.9
+        bg_acce = glucose_status['bg_acceleration']
+        if (glucose_status['parabola_fit_a2']!=0 and fit_corr>=corr_Min): 
+            minmax_delta = - glucose_status['parabola_fit_a1']/2/glucose_status['parabola_fit_a2'] * 5       #// back from 5min block  1 min
+            minmax_value = round(glucose_status['parabola_fit_a0'] - minmax_delta*minmax_delta/25*glucose_status['parabola_fit_a2'], 1)
+            minmax_delta = round(minmax_delta, 1)
+            if (minmax_delta<0 and bg_acce<0) :
+                console_error("Parabolic fit saw maximum of", short(minmax_value), "about", short(-minmax_delta), "minutes ago")
+            elif (minmax_delta<0 and bg_acce>0) :
+                console_error("Parabolic fit saw minimum of", short(minmax_value), "about", short(-minmax_delta), "minutes ago")
+            elif (minmax_delta>0 and bg_acce<0) :
+                console_error("Parabolic fit predicts maximum of", short(minmax_value), "in about", short(minmax_delta), "minutes")
+            elif (minmax_delta>0 and bg_acce>0) :
+                console_error("Parabolic fit predicts minimum of", short(minmax_value), "in about", short(minmax_delta), "minutes")
+        if ( fit_corr<corr_Min ) :
+            console_error("acce_ISF adaptation by-passed as correlation", round(fit_corr,3), "is too low")
+        else :
+            fit_share = 10*(fit_corr-corr_Min)                      #// 0 at correlation 0.9, 1 at 1.00
+            cap_weight = 1                                          #// full contribution above target
+            if ( glucose_status['glucose']<profile['target_bg'] and bg_acce>1 ) :
+                cap_weight = 0.5                                    #// halve the effect below target
+            acce_weight = 1
+            if ( bg_acce < 0 ) :
+                acce_weight = profile['bgBrake_ISF_weight']
+            elif ( bg_acce > 0 ):
+                acce_weight = profile['bgAccel_ISF_weight']
+            if 'acce_ISF' in new_parameter:
+                acce_ISF = new_parameter['acce_ISF']
+            else:
+                acce_ISF = 1 + bg_acce * cap_weight * acce_weight * fit_share
+            console_error("acce_ISF adaptation is", short(round(acce_ISF,2)))
+            Fcasts['acceISF'] = acce_ISF    #profile['sens'] / acce_ISF
+            if ( acce_ISF != 1 ) :
+                sens_modified = True
     #// end of mod V14j code block
 
     if 'bg_ISF' in new_parameter:
@@ -362,15 +367,21 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
         sens_modified = True
 
     bg_delta = glucose_status['delta']
+    if 'postmeal_ISF_duration' in profile:
+        pp_ISF_duration = profile['postmeal_ISF_duration']
+        pp_ISF_weight = profile['postmeal_ISF_weight']
+    else:
+        pp_ISF_duration = profile['postprandial_ISF_duration']
+        pp_ISF_weight = profile['postprandial_ISF_weight']
     if (bg_off > 0) :
         console_error("delta_ISF adaptation by-passed as average glucose < "+str(target_bg)+"+10")
     elif (glucose_status['short_avgdelta']<0) :
         console_error("delta_ISF adaptation by-passed as no rise or too short lived")
-    elif (profile['enableppisf_always'] or profile['postmeal_ISF_duration'] >= (currentTime - meal_data['lastCarbTime']) / 1000/3600) :
+    elif (profile['enableppisf_always'] or pp_ISF_duration>=(currentTime - meal_data['lastCarbTime']) / 1000/3600) :
         if 'pp_ISF' in new_parameter:
             pp_ISF = new_parameter['pp_ISF']
         else:
-            pp_ISF = 1 + max(0, bg_delta * profile['postmeal_ISF_weight'])
+            pp_ISF = 1 + max(0, bg_delta * pp_ISF_weight)
         console_error("pp_ISF adaptation is", short(round(pp_ISF,2)))
         #Fcasts['Delta_ISF'] = pp_ISF    #profile['sens']  
         if (pp_ISF != 1) :
@@ -390,8 +401,13 @@ def autoISF(sens, target_bg, profile, glucose_status, meal_data, currentTime, au
             sens_modified = True
 
     dura_ISF = 1
-    weightISF = profile['autoisf_hourlychange']           #// mod 7d: specify factor directly; use factor 0 to shut autoISF OFF
-    if (meal_data['mealCOB']>0 and not profile['enableautoisf_with_COB']) :
+    if 'autoisf_hourlychange' in profile:
+        weightISF = profile['autoisf_hourlychange']             #// mod 7d: specify factor directly; use factor 0 to shut autoISF OFF
+        enableduraisf_with_COB = profile['enableautoisf_with_COB']
+    else:                                                       #// mod 14j: name change
+        weightISF = profile['duraisf_hourlychange'] 
+        enableduraisf_with_COB = profile['enableduraisf_with_COB']
+    if (meal_data['mealCOB']>0 and not enableduraisf_with_COB) :
         console_error("dura_ISF by-passed; preferences disabled mealCOB of "+round(meal_data.mealCOB,1))    #// mod 7f
     elif (dura05<10) :
         console_error("dura_ISF by-passed; bg is only "+str(dura05)+"m at level", short(avg05))
