@@ -684,6 +684,7 @@ def TreatLoop(Curly, log, lcount):
         emulSMB.append(round(eval(mySMBstr),1))
         BZ_ISF.append(Fcasts['BZ_ISF'])                 # was set in determine_basal.py
         Delta_ISF.append(Fcasts['Delta_ISF'])           # was set in determine_basal.py
+        pp_ISF.append(Fcasts['pp_ISF'])                 # was set in determine_basal.py
         acceISF.append(Fcasts['acceISF'])               # was set in determine_basal.py
         emulISF.append(Fcasts['emulISF'])               # was set in determine_basal.py
 
@@ -1815,7 +1816,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
     global  origInsReq, emulInsReq
     global  origSMB, emulSMB, origMaxBolus, emulMaxBolus
     global  origBasal, emulBasal, lastBasal
-    global  profISF, origISF, autoISF, BZ_ISF, Delta_ISF, acceISF, emulISF, longDelta, avgDelta, longSlope, rateSlope
+    global  profISF, origISF, autoISF, BZ_ISF, Delta_ISF, pp_ISF, acceISF, emulISF, longDelta, avgDelta, longSlope, rateSlope
     global  Pred, FlowChart, Fits
     global  filecount
     global  t_startLabel, t_stoppLabel
@@ -1869,6 +1870,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
     autoISF     = []                                # holds the ISF after checking the autosense impact, emulation run
     BZ_ISF      = []                                # holds the ISF after strengthening due to high glucse level
     Delta_ISF   = []                                # holds the ISF after strengthening due to high delta
+    pp_ISF      = []                                # holds the ISF after strengthening due to high delta after meals
     acceISF     = []                                # holds the ISF after strengthening due to high acceleration
     emulISF     = []                                # holds the final ISF after strengthening due to long lasting highs
     
@@ -1996,7 +1998,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                                 this_List+= f'{round(thisDelta["parabola_fit_next_delta"],2):>8}'
                     r_list += this_List
                 if featured('ISF') or featured('ISF-factors'): 
-                    r_list += f'{round(emulAs_ratio[iFrame]/10,2):>7}{round(acceISF[iFrame],2):>6}{round(BZ_ISF[iFrame],2):>6}{round(Delta_ISF[iFrame],2):>6}{round(emulAI_ratio[iFrame]/10,2):>6}'
+                    r_list += f'{round(emulAs_ratio[iFrame]/10,2):>7}{round(acceISF[iFrame],2):>6}{round(BZ_ISF[iFrame],2):>6}{round(pp_ISF[iFrame],2):>6}{round(Delta_ISF[iFrame],2):>6}{round(emulAI_ratio[iFrame]/10,2):>6}'
                 if featured('ISF') or featured('ISFs'):         # 21
                     r_list += f'{round(origISF[iFrame],1):>9}{round(profISF[iFrame],1):>6}{round(emulISF[iFrame],1):>6}'
                 if featured('insReq'):
@@ -2008,25 +2010,25 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                 entries[thisTime] = r_list
                     
         # ---   print the comparisons    -------------------------
-        head1  = "  ;     ;     ;   ; target; target; target; target;    ;    ; "
-        head2  = "  ;  UTC; UNIX;   ;   low ;  high ;  low  ;  high ;    ;    ; "
-        head3  = "id; time; time; bg;  orig ;  orig ;  emul ;  emul ; cob; iob; act"
+        head1  = "  ;     ; ;     ;    ; target; target; target; target;      ;    ; "
+        head2  = "  ;  UTC; ; UNIX;    ;   low ;  high ;  low  ;  high ;      ;    ; "
+        head3  = "id; time;Z; time; bg ;  orig ;  orig ;  emul ;  emul ;  cob ; iob; act"
         
-        head1 += "; auto; dura; aisf ;     ; lin.fit; "
-        head2 += "; sens;  ISF; dura-; aisf;  dura- ; lin.fit"
-        head3 += "; orig; orig; tion ; avg.;  tion  ; delta"
+        head1 += "; auto; dura; dura;      ; lin.fit; "
+        head2 += "; sens;  ISF; min-; dura ;  min-  ; lin.fit"
+        head3 += "; orig; orig; utes; avg. ;  utes  ; delta"
         
         head1 += ";  parab; parab;  parab; parab"
         head2 += ";   fit ;  fit ;  fit ;   fit"
         head3 += "; correl; durat; last-Δ; next-Δ"
 
-        head1 += "; auto; acce;  bg ; delta; dura;     ;     ; "
-        head2 += "; sens ; ISF;  ISF;  ISF ;  ISF;  ISF;  ISF; ISF"
-        head3 += "; emul; emul; emul; emul ; emul; orig; prof; emul"
+        head1 += "; auto; acce;  bg ;   pp ; delta; dura;     ;     ;    "
+        head2 += "; sens ; ISF;  ISF;  ISF ;  ISF;  ISF;  ISF ;  ISF ; ISF"
+        head3 += "; emul; emul; emul; emul ; emul; emul ; orig;  prof; emul"
 
         head1 += "; Ins.; Ins.; max ; max ;     ;     ;     ; "
-        head2 += "; Req.; Req.;bolus;bolus; SMB ; SMB ; TBR ; TBR"
-        head3 += "; orig; emul; orig; emul; orig; emul; orig; emul"
+        head2 += "; Req.; Req.;bolus;bolus; SMB  ; SMB  ; TBR  ; TBR "
+        head3 += "; orig; emul; orig; emul; orig ; emul ; orig ; emul "
         #print('\n' + head)
         xyf.write(head1+'\n' + head2+'\n' + head3+'\n')
         
@@ -2054,6 +2056,8 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         max_BZ_ISF = 0.0
         min_Delta_ISF= 999
         max_Delta_ISF= 0.0
+        min_pp_ISF = 999
+        max_pp_ISF = 0.0
         min_acceISF= 999
         max_acceISF= 0.0
         min_emulISF= 999
@@ -2064,8 +2068,8 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
         max_emulSMB= 0.0
         
         for i in range(loopCount) :
-            tabz = f'{i:>3}; {loop_label[i]}; {loop_mills[i]:>13}; {bg[i]:>4}; ' 
-            tabz += f'{origTarLow[i]:>4};-{origTarHig[i]:>3}; {emulTarLow[i]:>4};-{emulTarHig[i]:>3}; ' 
+            tabz = f'{i:>3}; {loop_label[i][:-1]};Z; {loop_mills[i]:>13}; {bg[i]:>4}; ' 
+            tabz += f'{origTarLow[i]:>4};{origTarHig[i]:>3};{emulTarLow[i]:>4};{emulTarHig[i]:>3}; ' 
             tabz += f'{origcob[i]:>5}; {round(origiob[i]/10,2):>5}; {round(activity[i]/1000,3):>6}; ' 
             tabz += f'{round(origAs_ratio[i]/10,2):>5};'                # {round(emulAs_ratio[i]/10,2):>5};' 
             tabz += f'{round(origAI_ratio[i]/10,2):>6}; ' 
@@ -2084,7 +2088,7 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
                         skip_parab = False
             if skip_parab: this_List = '; ; ; ;'
             tabz += this_List
-            tabz += f'{round(emulAs_ratio[i]/10,2):>5};{round(acceISF[i],2):>6};{round(BZ_ISF[i],2):>6};{round(Delta_ISF[i],2):>6};{round(emulAI_ratio[i]/10,2):>4};'
+            tabz += f'{round(emulAs_ratio[i]/10,2):>5};{round(acceISF[i],2):>6};{round(BZ_ISF[i],2):>6};{round(pp_ISF[i],2):>6};{round(Delta_ISF[i],2):>6};{round(emulAI_ratio[i]/10,2):>4};'
             tabz += f'{round(origISF[i],1):>8};{round(profISF[i],1):>6};{round(emulISF[i],1):>6};' 
             tabz += f'{origInsReq[i]:>8}; {emulInsReq[i]:>6}; ' 
             tabz += f'{origMaxBolus[i]:>7}; {emulMaxBolus[i]:>4}; {origSMB[i]:>6}; {emulSMB[i]:>4}; ' 
@@ -2119,6 +2123,8 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
             if max_BZ_ISF <BZ_ISF[i]:           max_BZ_ISF  = BZ_ISF[i]
             if min_Delta_ISF>Delta_ISF[i]:      min_Delta_ISF = Delta_ISF[i]
             if max_Delta_ISF<Delta_ISF[i]:      max_Delta_ISF = Delta_ISF[i]
+            if min_pp_ISF >pp_ISF[i]:           min_pp_ISF  = pp_ISF[i]
+            if max_pp_ISF <pp_ISF[i]:           max_pp_ISF  = pp_ISF[i]
             if min_acceISF>acceISF[i]:          min_acceISF = acceISF[i]
             if max_acceISF<acceISF[i]:          max_acceISF = acceISF[i]
             if min_emulISF>emulISF[i]:          min_emulISF = emulISF[i]
@@ -2130,23 +2136,23 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
             xyf.write(tabz.replace('.', my_decimal) + '\n')
         
         sepLine = ''
-        sepLine += 254 * '-'
+        sepLine += 256 * '-'
         sepLine += '\n'
-        tabz = 'Minimum:;;; '+ f'{min_bg:>24}' \
+        tabz = 'Minimum:;;;; '+ f'{min_bg:>24}' \
              + f';;;;;;;;{round(min_origAS/10,2):>43}; {round(min_origAI/10,2):>5}' \
              + f';;;;;;;;;{round(min_emulAS/10,2):>5}' \
-             + f';{round(min_acceISF,2):>6};{round(min_BZ_ISF,2):>6};{round(min_Delta_ISF,2):>6};{round(min_emulAI/10,2):>5}' \
+             + f';{round(min_acceISF,2):>6};{round(min_BZ_ISF,2):>6};{round(min_pp_ISF,2):>6};{round(min_Delta_ISF,2):>6};{round(min_emulAI/10,2):>5}' \
              + f';{round(min_origISF,1):>69};{round(min_profISF,1):>6};{round(min_emulISF,1):>6}' \
              + f';;;;;{round(min_origSMB,1):>35}; {round(min_emulSMB,1):>4}'
         xyf.write(tabz.replace('.', my_decimal) + '\n')
-        tabz = 'Maximum:;;; '+ f'{max_bg:>24}' \
+        tabz = 'Maximum:;;;; '+ f'{max_bg:>24}' \
              + f';;;;;;;;{round(max_origAS/10,2):>43}; {round(max_origAI/10,2):>5}' \
              + f';;;;;;;;;{round(max_emulAS/10,2):>5}' \
-             + f';{round(max_acceISF,2):>6};{round(max_BZ_ISF,2):>6};{round(max_Delta_ISF,2):>6};{round(max_emulAI/10,2):>5}' \
+             + f';{round(max_acceISF,2):>6};{round(max_BZ_ISF,2):>6};{round(max_pp_ISF,2):>6};{round(max_Delta_ISF,2):>6};{round(max_emulAI/10,2):>5}' \
              + f';{round(max_origISF,1):>69};{round(max_profISF,1):>6};{round(max_emulISF,1):>6}' \
              + f';;;;;{round(max_origSMB,1):>35}; {round(max_emulSMB,1):>4}'
         xyf.write(tabz.replace('.', my_decimal) + '\n')
-        tabz = 'Totals:'+ ';'*33+f'{round(origSMBsum,1):>225}; {round(emulSMBsum,1):>4}; {round(origBasalint,2):>9}; {round(emulBasalint,2):>6}'
+        tabz = 'Totals:'+ ';'*35+f'{round(origSMBsum,1):>225}; {round(emulSMBsum,1):>4}; {round(origBasalint,2):>9}; {round(emulBasalint,2):>6}'
         xyf.write(tabz.replace('.', my_decimal) + '\n')
 
         # ---   list all types of delta information    -----------
@@ -2212,8 +2218,8 @@ def parameters_known(myseek, arg2, variantFile, startLabel, stoppLabel, entries,
             head1 += '   ----parabola fit----'
             head2 += '   dura  last-Δ  next-Δ'
         if featured('ISF') or featured('ISF-factors'):  # 31
-            head1 += '   ---------ISF factors--------'
-            head2 += '   auto  acce   bg   rise  dura'
+            head1 += '   ------------ISF factors-----------'
+            head2 += '   auto  acce   bg    pp  delta  dura'
         if featured('ISF') or featured('ISFs'):         # 21
             head1 += '     ------ISFs------' 
             head2 += '     orig  prof  emul'

@@ -172,7 +172,7 @@ if IsAndroid :
     ###########################################################################
     btns = ["Next", "Exit", "Test"]
     items = ["bg", "target", "iob", "cob", "range", "bestslope", "ISF-factors", "ISFs", "insReq", "SMB", "basal"]
-    width = [5,     6,        6,      6,      13,      13,              31,       21,      13,      11          ]
+    width = [5,     6,        6,      6,      13,      13,              37,       21,      13,      11,     12  ]
     pick  = [0,                                                          6,        7,       8,       9          ]
     while True:
         default_pick = pick
