@@ -914,8 +914,10 @@ def ConvertSTRINGooDate(stmp) :
          dlst =    0                                 # no dlst period winter 2020/21
     elif stmp < "2021-10-31T03:00:00.000Z":
          dlst = 3600                                 #    dlst period summer 2021
-    else:
+    elif stmp < "2022-03-27T02:00:00.000Z":
          dlst =    0                                 # no dlst period winter 2021/22
+    else:
+         dlst = 3600                                 #    dlst period summer 2022
     MSJahr		= eval(    stmp[ 0:4])
     MSMonat		= eval('1'+stmp[ 5:7]) -100
     MSTag		= eval('1'+stmp[ 8:10])-100
@@ -994,12 +996,12 @@ def scanLogfile(fn, entries):
                     Block2 = hole(sLine, 1+sOffset, '[', ']')
                     if Block2 == '[DataService.onHandleIntent():54]' \
                     or Block2 == '[DataService.onHandleIntent():55]' \
-                    or Block2 == '[DataService.onHandleIntent():69]':             # token :54 added for AAPS versions <2.7, :69 for V2.7
+                    or Block2 == '[DataService.onHandleIntent():69]':               # token :54 added for AAPS versions <2.7, :69 for V2.7
                         pass
-                    elif Block2[:-3] == '[DetermineBasalAdapterAMAJS.invoke():':  # various input items for loop
+                    elif Block2[:-3] == '[DetermineBasalAdapterAMAJS.invoke():':    # various input items for loop
                         log_msg('\nSorry, this tool is currently only available for oref1 with SMB\n')
                         return 'STOP'
-                    elif Block2.find('[DetermineBasalAdapterSMBJS.invoke():')==0: # loop inputs or result record
+                    elif Block2.find('[DetermineBasalAdapterSMBJS.invoke():')==0:   # loop inputs or result record
                         key_anf = Block2.find('):')
                         key_end = Block2.find(']:')
                         dataType= eval(Block2[key_anf+2:key_end])
@@ -1040,7 +1042,8 @@ def scanLogfile(fn, entries):
                         #elif dataType == dataType_offset+146:               checkCarbsNeeded(dataStr[8:], lcount)   # result record in AAPS2.8 / Phillip
                         pass
                     elif Block2 == '[LoggerCallback.jsFunction_log():39]' \
-                    or   Block2 == '[LoggerCallback.jsFunction_log():42]':  # script debug info from console.error; '42:' is for >= V2.7
+                    or   Block2 == '[LoggerCallback.jsFunction_log():42]' \
+                    or   Block2 == '[LoggerCallback.jsFunction_log():21]':          # from console.error; '42' is for >= V2.7, '21' for V3
                         PrepareSMB(sLine, log, lcount)   
                     elif Block2 == '[DbLogger.dbAdd():29]':                             ################## flag for V2.5.1
                         Curly =  hole(sLine, 1+sOffset+len(Block2), '{', '}')
