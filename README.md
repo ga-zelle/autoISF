@@ -1,6 +1,4 @@
 # autoISF
-contains AAPS files modified and documentation for the purpose of using the prototype autoISF algorithm.
+The autoISF add-on to AAPS V3.0.0.1 using oref1 can adapt ISF if glucose or its trends show certain behaviour. See the Quick User Guide for details of those scenarios. The effects can be tuned individually to further improve your results if you already have a TIR of about 90%.
 
 **DO NOT USE IT WITH LIBRE CGMs**
-
-The only tested versions are in folders *AAPS_files* and *AAPS_files_incl_varSMB*. The others are still experimental and may result in unexpected behaviour.
