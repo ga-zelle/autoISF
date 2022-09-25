@@ -6,4 +6,4 @@ The autoISF add-on to AAPS V3.1.0.2 using oref1 can adapt ISF if glucose or its 
 Currently the repo with the complete code can be found here: https://github.com/T-o-b-i-a-s/AndroidAPS/tree/3.1.0.2-ai2.2.7
 Beware that in Android Studio you first start with its related master branch, wait for all the downloading and other updates and only finally switch to the above branch.
 
-The last update dates from 31-Jul2022 to include a safety switch to first enable the new SMB ON/OFF method before you can use it.
+The last update dates from 31-Jul-2022 to include a safety switch to first enable the new SMB ON/OFF method before you can use it.
