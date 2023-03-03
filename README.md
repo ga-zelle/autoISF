@@ -1,6 +1,6 @@
 **This branch and especially the links contained herein are still under construction**
 
-# autoISF
+# autoISF version 2.2.8
 The autoISF add-on to AAPS V3.1.0.3 using oref1 can adapt ISF if glucose or its trends show certain behaviour. See the Quick Guide for details of those scenarios. The effects can be tuned individually to further improve your results if you already have a TIR of about 90%.
 
 Currently the repo with the complete code can be found here: https://github.com/T-o-b-i-a-s/AndroidAPS/tree/3.1.0.3-ai2.2.8
