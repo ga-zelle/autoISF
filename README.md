@@ -9,3 +9,4 @@ The last update is from 06-Mar-2023. The main new features are
 * predictable SMB on/off when target is even/odd for mmol/l systems
 * SMB on/off when target is even/odd also for profile targets
 * revival of the exercise mode
+* fixed readability of SMB-tab
