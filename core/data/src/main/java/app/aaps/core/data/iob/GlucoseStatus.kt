@@ -1,5 +1,20 @@
 package app.aaps.core.data.iob
 
+/**
+ * added information about recent glucose pattern properties
+ *
+ * added results:
+ *
+ * duraISFminutes    past duration of BG changing only within +/- 5%
+ * duraISFaverage    average BG during above time window
+ * parabolaMinutes   past duration of BG approximating parabola shape
+ * deltaPl           parabola derived last delta, i.e. from -5m to now
+ * deltaPn           parabola derived next delta, i.e. from now to 5m into the future
+ * bgAcceleration    parabola derived current BG acceleration
+ * a0, a1, a2        parabola coefficients:   BG = a0 + a1 * Time + a2 * Time^2
+ * corrSqu           correlation coefficient, i.e. quality of parabola fit
+ */
+
 data class GlucoseStatus(
     val glucose: Double,
     val noise: Double = 0.0,
