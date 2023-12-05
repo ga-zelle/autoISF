@@ -5,6 +5,6 @@ Currently the repo with the complete code can be found here: https://github.com/
 Beware that in Android Studio you first start with its related master branch, wait for all the downloading and other updates and only finally switch to the above branch. More detailed build instructions are given in that repo.
 
 The main new features provided by the upgrade from 2.2.8.2 to 3.0  are
-* Addition of Activity Monmtor based on the phones step counter. It is a milder complement to Exercise Mode.
+* Addition of Activity Monitor based on the phones step counter. It is a milder complement to Exercise Mode.
 * The iobTH method for FULL-CLOSED-LOOPING is now handled internally which offers more automated adaptability than regular automations can do
 * some autoISF specific variables are now accessible in automations
