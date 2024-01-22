@@ -1,2 +1,2 @@
-e.Book for Full Vlosed Loop
+New e-Book for Full Closed Loop
 https://github.com/bernie4375/FCL-potential-autoISF-research-
