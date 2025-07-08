@@ -1,4 +1,4 @@
-# autoISF version 3.1.0
+# AutoISF version 3.1.0
 This is an early heads up on the new version to come soon. Final testing is under way and the release may follow quickly after the next AAPS release.
 
 The autoISF is an add-on to AAPS V3.3.3.0-dev-a using oref1 and out of the box it behaves like regular AAPS. It can adapt ISF if glucose or its trends show certain behaviour. See the Quick Guide for details of those scenarios. The effects can be tuned individually to further improve your results if you already have a TIR of about 90%. Besides those adaptations there are other features like managing SMB settings or reacting to step counts. Last but not least it can serve as an enabler for Full Closed Looping (see https://discord.com/channels/953929437894803478/1025730692014936207 ).
