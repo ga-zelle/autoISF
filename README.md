@@ -13,4 +13,4 @@ The main new features on the AutoISF side provided by the upgrade from 3.0.3 to 
 * Libre and G7 sensors managed by Juggluco and feeding the data directly into AAPS can be smoothed by a 1st order exponential method adapted from Eversense/Esel
 * The State Automation method contained in a PR by faldor20 is included
 
-For details of these and other minor additins see the Preface in the Quick Guide which is still in its draft stage.
+For details of these and other minor additins see the Preface in the Quick Guide.
