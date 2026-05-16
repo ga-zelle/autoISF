@@ -26,3 +26,4 @@ EASE OF USE
 * keep 1 month of logfiles
 * clean glucose records in database down to just last 7 days
 * alternatively enter *half basal exercise target* in mmol/L
+* automatic reminder to enable Physical Activity permission for phone step counter
